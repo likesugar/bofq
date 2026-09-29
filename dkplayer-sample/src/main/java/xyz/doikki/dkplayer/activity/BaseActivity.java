@@ -42,6 +42,11 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
         return true;
     }
 
+    /** 是否显示顶部标题栏（dk播放器顶栏） */
+    protected boolean showTitleBar() {
+        return true;
+    }
+
     protected VideoViewManager getVideoViewManager() {
         return VideoViewManager.instance();
     }
@@ -58,9 +63,13 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
         //标题栏设置
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
-            actionBar.setTitle(getTitleResId());
-            if (enableBack()) {
-                actionBar.setDisplayHomeAsUpEnabled(true);
+            if (!showTitleBar()) {
+                actionBar.hide();
+            } else {
+                actionBar.setTitle(getTitleResId());
+                if (enableBack()) {
+                    actionBar.setDisplayHomeAsUpEnabled(true);
+                }
             }
         }
 

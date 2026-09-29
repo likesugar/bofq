@@ -365,26 +365,58 @@ public class MainActivity extends Activity {
                 }
                 try {
                     org.json.JSONArray arr = new org.json.JSONArray(v);
-                    boolean got = false;
+                    final java.util.List<String> cands = new java.util.ArrayList<>();
                     for (int i = 0; i < arr.length(); i++) {
                         String u = arr.getString(i).replace("\\u0026", "&").replace("&amp;", "&");
-                        if (seenMedia.add(u)) {
-                            got = true;
-                            final String f = u;
-                            main.post(new Runnable() { public void run() { addRecord("B站", f); } });
-                        }
+                        if (seenMedia.add(u)) cands.add(u);
                     }
-                    if (got) {
+                    if (!cands.isEmpty()) {
                         parseDone();
                         main.post(new Runnable() {
                             public void run() { if (bgWeb != null) bgWeb.stopLoading(); }
                         });
+                        // 多个候选时选体积最大的（=最高画质）自动开播
+                        pickBestBili(cands);
                     } else if (round < 20 && parsing) {
                         main.postDelayed(new Runnable() { public void run() { pollPeanutResult(round + 1); } }, 1500);
                     }
                 } catch (Throwable ignored) {}
             }
         });
+    }
+
+    /** 择优：Content-Length 最大者视为最高画质，加入记录并自动开播 */
+    private void pickBestBili(final java.util.List<String> urls) {
+        new Thread(new Runnable() {
+            public void run() {
+                String best = urls.get(0);
+                long bestLen = -1;
+                for (String u : urls) {
+                    long len = remoteSize(u);
+                    if (len > bestLen) { bestLen = len; best = u; }
+                }
+                final String f = best;
+                main.post(new Runnable() { public void run() { addRecord("B站", f); } });
+            }
+        }).start();
+    }
+
+    private long remoteSize(String url) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new java.net.URL(url).openConnection();
+            c.setConnectTimeout(6000);
+            c.setReadTimeout(6000);
+            c.setRequestMethod("HEAD");
+            c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) Chrome/120 Mobile");
+            c.setRequestProperty("Referer", "https://www.bilibili.com/");
+            long len = c.getContentLengthLong();
+            return len < 0 ? 0 : len;
+        } catch (Throwable e) {
+            return -1;
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     private void maybeRecordBiliMedia(String url) {
