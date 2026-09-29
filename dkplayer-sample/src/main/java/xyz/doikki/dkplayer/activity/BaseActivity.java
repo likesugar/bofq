@@ -85,7 +85,7 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
 
     }
 
-    /** 聚焦丢失/恢复时再次确保状态栏隐藏 */
+    /** 所有页面统一隐藏状态栏（下拉临时呼出），子页面无需重复处理 */
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
@@ -97,6 +97,12 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
             ic.setSystemBarsBehavior(
                 androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         } catch (Throwable ignored) {}
+        if (android.os.Build.VERSION.SDK_INT < 30) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        }
     }
 
     protected void setTitle(String title) {
