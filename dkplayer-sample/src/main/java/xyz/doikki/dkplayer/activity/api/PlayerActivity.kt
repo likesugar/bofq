@@ -37,7 +37,56 @@ class PlayerActivity : BaseActivity<VideoView>() {
 
     private var rawUrl: String? = null
     private var cacheOn = false
+    private var proxyOn = false
     private lateinit var mxPanel: xyz.doikki.dkplayer.widget.component.MxPanelView
+
+    /** 防盗链请求头：B站/抖音直连播放用 */
+    private fun headersFor(u: String): MutableMap<String, String>? {
+        val l = u.toLowerCase()
+        if (l.contains("bilibili") || l.contains("bilivideo") || l.contains("upos-")) {
+            return mutableMapOf(
+                "User-Agent" to "Mozilla/5.0 (Linux; Android 13) Chrome/120 Mobile",
+                "Referer" to "https://www.bilibili.com/")
+        }
+        if (l.contains("douyin") || l.contains("douyinvod") || l.contains("aweme")) {
+            return mutableMapOf(
+                "User-Agent" to "Mozilla/5.0 (Linux; Android 13) Chrome/120 Mobile",
+                "Referer" to "https://live.douyin.com/")
+        }
+        return null
+    }
+
+    /** 点「代理」：切回本地代理流播放（直连被拒时用） */
+    private fun replayWithProxy() {
+        val u = rawUrl ?: return
+        val l = u.toLowerCase()
+        if (l.contains("127.0.0.1")) {
+            Toast.makeText(this, "已在代理播放", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            val wrapped: String = when {
+                l.contains("bilibili") || l.contains("bilivideo") || l.contains("upos-") ->
+                    "http://127.0.0.1:8123/bili?u=" + java.net.URLEncoder.encode(u, "UTF-8")
+                l.contains("douyin") || l.contains("douyinvod") ->
+                    "http://127.0.0.1:8123/dy?u=" + java.net.URLEncoder.encode(u, "UTF-8")
+                else -> u
+            }
+            if (wrapped == u) {
+                Toast.makeText(this, "该链接无需代理", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val pos = mVideoView!!.currentPosition.toInt()
+            proxyOn = true
+            mVideoView!!.release()
+            mVideoView!!.skipPositionWhenPlay(pos)
+            mVideoView!!.setUrl(wrapped)
+            mVideoView!!.start()
+            Toast.makeText(this, "已切换代理播放", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "代理切换失败", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     /** 点「缓存」：当前视频切到本地代理，边播边存进 downloads */
     private fun cacheAndReplay() {
@@ -59,6 +108,28 @@ class PlayerActivity : BaseActivity<VideoView>() {
         mVideoView!!.setUrl(xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getProxy(this).getProxyUrl(u))
         mVideoView!!.start()
         Toast.makeText(this, "边播边缓存已开启，文件在下载页", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemBars()
+    }
+
+    /** 隐藏状态栏/导航栏，下拉临时呼出 */
+    private fun hideSystemBars() {
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            window.insetsController?.hide(android.view.WindowInsets.Type.statusBars())
+            window.insetsController?.systemBarsBehavior =
+                android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+        }
     }
 
     private val renderView by lazy {
@@ -98,6 +169,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             controller.addControlComponent(gestureControlView)
             mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
             mxPanel.onCacheClick = Runnable { cacheAndReplay() }
+            mxPanel.onProxyClick = Runnable { replayWithProxy() }
             controller.addControlComponent(mxPanel) //MX浮层:比例/倍速/截图/静音/旋转/缓存
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
@@ -142,7 +214,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
                 url = Utils.getFileFromContentUri(this, it.data)
             }
 //            val header = hashMapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
-            mVideoView.setUrl(url)
+            mVideoView.setUrl(url, headersFor(url))
             rawUrl = url
 
             //保存播放进度

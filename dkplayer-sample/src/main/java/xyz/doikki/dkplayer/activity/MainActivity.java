@@ -579,15 +579,8 @@ public class MainActivity extends Activity {
         final boolean isBili = rawUrl.contains("bilibili.com") || rawUrl.contains("bilivideo");
         final boolean isDy = rawUrl.contains("douyin");
         final String streamUrl;
-        try {
-            if (isBili) {
-                streamUrl = "http://127.0.0.1:8123/bili?u=" + java.net.URLEncoder.encode(rawUrl, "UTF-8");
-            } else if (isDy) {
-                streamUrl = "http://127.0.0.1:8123/dy?u=" + java.net.URLEncoder.encode(rawUrl, "UTF-8");
-            } else {
-                streamUrl = rawUrl;
-            }
-        } catch (Exception e) { return; }
+        // 默认直连播放（Referer 头由播放页注入），代理改由「代理」按键触发
+        streamUrl = rawUrl;
 
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
