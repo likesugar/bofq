@@ -47,8 +47,9 @@ public class PlayRawAssetsActivity extends BaseActivity<VideoView> {
 
         switch (view.getId()) {
             case R.id.btn_raw:
+                // 内置样例视频已移除，改播 assets（同样已移除，仅演示路径）
                 if (playerFactory instanceof ExoMediaPlayerFactory) { //ExoPlayer
-                    DataSpec dataSpec = new DataSpec(RawResourceDataSource.buildRawResourceUri(R.raw.movie));
+                    DataSpec dataSpec = new DataSpec(android.net.Uri.parse("file:///android_asset/test.mp4"));
                     RawResourceDataSource rawResourceDataSource = new RawResourceDataSource(this);
                     try {
                         rawResourceDataSource.open(dataSpec);
