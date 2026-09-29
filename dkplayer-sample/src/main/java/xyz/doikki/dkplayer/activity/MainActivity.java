@@ -285,15 +285,61 @@ public class MainActivity extends Activity {
                 String url = request.getUrl().toString();
                 maybeRecordBiliMedia(url);
                 String l = url.toLowerCase();
-                if (url.contains(".flv") || url.contains(".m3u8") || url.contains("stream-")) {
-                    final String f = url;
-                    main.post(new Runnable() { public void run() { addRecord("直播流", f); } });
+                if (url.contains("/log/")) return null;
+                boolean hit = l.contains(".flv") || l.contains(".m3u8") || l.contains("stream-")
+                    || l.contains(".mp4") || l.contains(".m4s")
+                    || l.contains("douyinvod") || l.contains("/aweme/v1/play")
+                    || l.contains("playwm");
+                if (hit && !l.contains("bilivideo") && !l.contains("upos-")) {
+                    // 抖音强制最高画质：ratio→1080p；biz_resolution→1088x1920（兼容 %3D 编码）
+                    String hi = url
+                        .replaceAll("ratio=[a-zA-Z0-9_]+", "ratio=1080p")
+                        .replaceAll("biz_resolution(=|%3D|%3d)[a-zA-Z0-9_x]+", "biz_resolution$11088x1920");
+                    final String f = hi;
+                    main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+                    if (l.contains(".m3u8")) {
+                        new Thread(new Runnable() { public void run() { pickBestVariant(url); } }).start();
+                    }
                 }
                 return null;
             }
         });
         android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
         content.addView(bgWeb, new android.view.ViewGroup.LayoutParams(1, 1));
+    }
+
+    /** HLS 主清单择优：抓 BANDWIDTH 最大的变体流进记录（自小工具 DouyinActivity 移植） */
+    private void pickBestVariant(String masterUrl) {
+        try {
+            HttpURLConnection c = (HttpURLConnection) new java.net.URL(masterUrl).openConnection();
+            c.setConnectTimeout(8000); c.setReadTimeout(8000);
+            c.setRequestProperty("User-Agent", UA_MOBILE);
+            c.setRequestProperty("Referer", "https://live.douyin.com/");
+            if (c.getResponseCode() != 200) return;
+            java.io.InputStream in = c.getInputStream();
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] b = new byte[8192]; int n;
+            while ((n = in.read(b)) > 0) bo.write(b, 0, n);
+            in.close(); c.disconnect();
+            String body = bo.toString("UTF-8");
+            if (!body.contains("#EXT-X-STREAM-INF")) return;   // 已是媒体清单
+            long bestBw = -1; String best = null; long curBw = -1;
+            java.net.URI base = java.net.URI.create(masterUrl);
+            for (String ln : body.split("\n")) {
+                String t = ln.trim();
+                if (t.startsWith("#EXT-X-STREAM-INF")) {
+                    Matcher bm = Pattern.compile("BANDWIDTH=(\\d+)").matcher(t);
+                    curBw = bm.find() ? Long.parseLong(bm.group(1)) : -1;
+                } else if (!t.isEmpty() && !t.startsWith("#") && curBw > bestBw) {
+                    bestBw = curBw;
+                    best = base.resolve(t).toString();
+                }
+            }
+            if (best != null && seenMedia.add(best)) {
+                final String f = best;
+                main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void resolveBiliViaPeanut(String biliUrl) {

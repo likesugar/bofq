@@ -72,8 +72,9 @@ class PlayerActivity : BaseActivity<VideoView>() {
             controller.addControlComponent(xyz.doikki.dkplayer.widget.component.MxPanelView(this)) //MX浮层:比例/倍速/截图/静音/旋转
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
-            //默认进入全屏播放
+            //默认进入全屏播放（横屏）
             mVideoView!!.startFullScreen()
+            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
             //设置标题
             val title = it.getStringExtra(IntentKeys.TITLE)
