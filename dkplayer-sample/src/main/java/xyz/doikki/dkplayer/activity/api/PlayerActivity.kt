@@ -462,7 +462,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             "https://cms-bucket.nosdn.127.net/eb411c2810f04ffa8aaafc42052b233820180418095416.jpeg"
 
         @JvmStatic
-        fun start(context: Context, url: String, title: String, isLive: Boolean, customRender: Boolean = false) {
+        fun start(context: Context, url: String?, title: String, isLive: Boolean, customRender: Boolean = false) {
             val intent = Intent(context, PlayerActivity::class.java)
             intent.putExtra(IntentKeys.URL, url)
             intent.putExtra(IntentKeys.IS_LIVE, isLive)
