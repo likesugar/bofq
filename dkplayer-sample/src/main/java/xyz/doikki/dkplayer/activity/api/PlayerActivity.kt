@@ -284,6 +284,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             controller.addControlComponent(mxPanel) //MX浮层:比例/倍速/截图/静音/旋转/缓存
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
+            controller.setDismissTimeout(8000) //控件显示时长 4s→8s
             //默认进入全屏播放（横屏）
             mVideoView!!.startFullScreen()
             requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE

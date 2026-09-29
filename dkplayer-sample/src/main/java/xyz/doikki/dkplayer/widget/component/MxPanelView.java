@@ -218,7 +218,16 @@ public class MxPanelView extends GestureView {
         btnMore.setBackgroundResource(R.drawable.mx_circle);
         btnMore.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                mMenu.setVisibility(mMenu.getVisibility() == VISIBLE ? GONE : VISIBLE);
+                boolean opening = mMenu.getVisibility() != VISIBLE;
+                mMenu.setVisibility(opening ? VISIBLE : GONE);
+                if (mWrapper == null) return;
+                if (opening) {
+                    mWrapper.stopFadeOut();      // 面板打开期间不让控制层自动隐藏
+                    startKeepAlive();
+                } else {
+                    stopKeepAlive();
+                    mWrapper.startFadeOut();
+                }
             }
         });
         top.addView(btnMore, new LinearLayout.LayoutParams(dp(40), dp(40)));
@@ -291,9 +300,28 @@ public class MxPanelView extends GestureView {
         mWrapper = wrapper;
     }
 
+    /** 面板打开期间保活控制层显示 */
+    private final Runnable keepAlive = new Runnable() {
+        public void run() {
+            if (mMenu != null && mMenu.getVisibility() == VISIBLE && mWrapper != null) {
+                mWrapper.show();
+                mHandler.postDelayed(this, 3000);
+            }
+        }
+    };
+
+    private void startKeepAlive() {
+        mHandler.removeCallbacks(keepAlive);
+        mHandler.postDelayed(keepAlive, 3000);
+    }
+
+    private void stopKeepAlive() {
+        mHandler.removeCallbacks(keepAlive);
+    }
+
     @Override
     public void onVisibilityChanged(boolean isVisible, android.view.animation.Animation anim) {
-        // 信息行与 ⁝ 跟随控制层显示/隐藏；打开的面板一并收起
+        // 信息行与 ⁝ 跟随控制层显示/隐藏；隐藏时收起面板并停保活
         if (isVisible) {
             btnMore.setVisibility(VISIBLE);
             tvInfo.setVisibility(VISIBLE);
@@ -301,6 +329,7 @@ public class MxPanelView extends GestureView {
             btnMore.setVisibility(GONE);
             tvInfo.setVisibility(GONE);
             mMenu.setVisibility(GONE);
+            stopKeepAlive();
         }
     }
 
