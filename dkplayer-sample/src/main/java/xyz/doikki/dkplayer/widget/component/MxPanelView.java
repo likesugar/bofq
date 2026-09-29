@@ -48,7 +48,6 @@ public class MxPanelView extends GestureView {
 
     private ControlWrapper mWrapper;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private TextView tvInfo;
     private LinearLayout mMenu;
     private TextView btnMore;
     private int scaleIdx = 0, speedIdx = 2;
