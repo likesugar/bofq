@@ -192,6 +192,7 @@ public class MainActivity extends Activity {
             douyinPickScheduled = false;
             ensureBgWeb(true);
             bgWeb.loadUrl(url);
+            startDouyinWatchdog();   // 没抓到裸地址就一直刷新重试
         } else {
             synchronized (douyinCands) { douyinCands.clear(); }
             douyinPickScheduled = false;
@@ -320,10 +321,27 @@ public class MainActivity extends Activity {
                 maybeRecordBiliMedia(url);
                 String l = url.toLowerCase();
                 if (url.contains("/log/")) return null;
-                boolean hit = l.contains(".flv") || l.contains(".m3u8") || l.contains("stream-")
-                    || l.contains(".mp4") || l.contains(".m4s")
-                    || l.contains("douyinvod") || l.contains("/aweme/v1/play")
-                    || l.contains("playwm");
+                // 抖音直播：只要无参数裸地址 .../stage/xxxxx（不带 .flv?e= 签名参数，签名地址每次都变会死循环）
+                String base = url;
+                int qi = base.indexOf('?');
+                if (qi > 0) base = base.substring(0, qi);
+                String lb = base.toLowerCase();
+                boolean bareLive = lb.contains("douyincdn") && lb.contains("/stage/")
+                    && !lb.substring(lb.lastIndexOf('/') + 1).contains(".");
+                if (bareLive && !l.contains("bilivideo") && !l.contains("upos-")) {
+                    final String f = base;
+                    boolean added = false;
+                    synchronized (douyinCands) {
+                        if (!douyinCands.contains(f)) { douyinCands.add(f); added = true; }
+                    }
+                    if (added && !douyinPickScheduled) {
+                        douyinPickScheduled = true;
+                        main.postDelayed(new Runnable() { public void run() { finishDouyinPick(); } }, 3000);
+                    }
+                    return null;
+                }
+                boolean hit = (l.contains(".flv") || l.contains(".m3u8") || l.contains(".mp4") || l.contains(".m4s"))
+                    && (l.contains("douyinvod") || l.contains("/aweme/v1/play") || l.contains("playwm"));
                 if (hit && !l.contains("bilivideo") && !l.contains("upos-")) {
                     // 抖音强制最高画质：ratio→1080p；biz_resolution→1088x1920（兼容 %3D 编码）
                     String hi = url
@@ -758,7 +776,28 @@ public class MainActivity extends Activity {
         }});
     }
 
-    /** 抖音候选收集6秒后按体积择优，自动开播最大者 */
+    /** 抖音直播看门狗：8秒还没抓到裸地址就刷新浏览页，直到抓到为止 */
+    private final Runnable douyinWatchdog = new Runnable() {
+        public void run() {
+            if (!parsing || bgWeb == null) return;
+            boolean hasBare;
+            synchronized (douyinCands) { hasBare = !douyinCands.isEmpty(); }
+            if (!hasBare) {
+                bgWeb.post(new Runnable() { public void run() {
+                    try { bgWeb.reload(); } catch (Throwable ignored) {}
+                }});
+            }
+            if (hasBare && douyinPickScheduled) return;  // 已进入择优流程，停止看门狗
+            main.postDelayed(this, 8000);
+        }
+    };
+
+    private void startDouyinWatchdog() {
+        main.removeCallbacks(douyinWatchdog);
+        main.postDelayed(douyinWatchdog, 8000);
+    }
+
+    /** 抖音候选收集后按体积择优，自动开播最大者 */
     private void finishDouyinPick() {
         java.util.List<String> snapshot;
         synchronized (douyinCands) { snapshot = new java.util.ArrayList<>(douyinCands); }
@@ -775,7 +814,10 @@ public class MainActivity extends Activity {
                     if (len > bestLen) { bestLen = len; best = u; }
                 }
                 final String f = best;
-                main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+                main.post(new Runnable() { public void run() {
+                    addRecord("抖音", f);
+                    parseDone();
+                }});
             }
         }).start();
     }

@@ -73,8 +73,30 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
             }
         }
 
+        // 所有页面隐藏状态栏（compat 方案，下拉临时呼出）
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        androidx.core.view.WindowInsetsControllerCompat ic =
+            androidx.core.view.WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        ic.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars());
+        ic.setSystemBarsBehavior(
+            androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+
         initView();
 
+    }
+
+    /** 聚焦丢失/恢复时再次确保状态栏隐藏 */
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) return;
+        try {
+            androidx.core.view.WindowInsetsControllerCompat ic =
+                androidx.core.view.WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+            ic.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars());
+            ic.setSystemBarsBehavior(
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        } catch (Throwable ignored) {}
     }
 
     protected void setTitle(String title) {
