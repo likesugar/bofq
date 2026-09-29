@@ -293,6 +293,10 @@ public class MainActivity extends Activity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                // 油猴脚本：抖音页面自动注入「抖音网页版全能优化」
+                if (url != null && (url.contains("douyin.com") || url.contains("iesdouyin"))) {
+                    injectUserscript(view);
+                }
                 if (url != null && url.contains("hellotik.app")) {
                     view.postDelayed(new Runnable() {
                         public void run() { hellotikSubmit(0); }
@@ -607,9 +611,48 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** 油猴脚本：下载并注入「抖音网页版全能优化」(greasyfork 584735) */
+    private String userscriptCache = null;
+    private boolean userscriptTried = false;
+    private static final String USERSCRIPT_URL = "https://update.greasyfork.org/scripts/584735/code/script.user.js";
+
+    private void injectUserscript(final WebView view) {
+        if (userscriptCache != null) { runUserscript(view); return; }
+        if (userscriptTried) return;
+        userscriptTried = true;
+        new Thread(new Runnable() { public void run() {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new java.net.URL(USERSCRIPT_URL).openConnection();
+                c.setConnectTimeout(8000); c.setReadTimeout(8000);
+                c.setRequestProperty("User-Agent", UA_MOBILE);
+                if (c.getResponseCode() != 200) { c.disconnect(); return; }
+                java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(c.getInputStream(), "UTF-8"));
+                StringBuilder sb = new StringBuilder();
+                char[] b = new char[4096]; int n;
+                while ((n = br.read(b)) > 0) sb.append(b, 0, n);
+                br.close(); c.disconnect();
+                userscriptCache = sb.toString();
+                main.post(new Runnable() { public void run() { runUserscript(view); } });
+            } catch (Throwable ignored) {}
+        }}).start();
+    }
+
+    private void runUserscript(final WebView view) {
+        String js = userscriptCache;
+        if (js == null || js.length() < 50) return;
+        // 油猴API垫片
+        String shim = "if(typeof window.GM_addStyle==='undefined'){window.GM_addStyle=function(c){var s=document.createElement('style');s.textContent=c;document.head.appendChild(s);};}"
+            + "if(typeof window.GM_getValue==='undefined'){window.GM_getValue=function(k,d){var v=localStorage.getItem('gm_'+k);return v===null?d:v;};window.GM_setValue=function(k,v){localStorage.setItem('gm_'+k,v);};window.GM_deleteValue=function(k){localStorage.removeItem('gm_'+k);};}"
+            + "if(typeof window.GM_xmlhttpRequest==='undefined'){window.GM_xmlhttpRequest=function(d){fetch(d.url).then(function(r){return r.text();}).then(function(t){if(d.onload)d.onload({responseText:t,status:200});});};}"
+            + "if(typeof window.unsafeWindow==='undefined'){window.unsafeWindow=window;}";
+        view.evaluateJavascript(shim, null);
+        final String escaped = js.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "");
+        view.evaluateJavascript("(function(){try{eval('" + escaped + "');}catch(e){console.log('userscript error',e);}})();", null);
+        Toast.makeText(this, "已注入油猴脚本", Toast.LENGTH_SHORT).show();
+    }
+
     /** 抖音直播解析：移植 PlutoGuo/douyin-live-extractor（无签名，GET页面+正则+JSON） */
-    private static final String DY_LIVE_COOKIE =
-        "enter_pc_once=1; hevc_supported=true; ttwid=1%7COnZEYGAxHABx6WRfArV8V0vfh1qUfP8AU2WYpG2ybdU%7C1754493043%7C867b28541b24aca9aec6379357aa2bff731e159fa7a804a767f575c8ff886639; __ac_nonce=06893707d00e64c4488d5; __ac_signature=_02B4Z6wo00f01m0zFcQAAIDDRDeLuhFSmo5tExFAAPPu88; odin_tt=e0bcb4ad345d3ed6915b71cab9469cb459681b743f65d870cb52329adfa8792b80633cf01c31edd9cf4874b743daacc7b789efd1727202b7ed3f6e7059ce43a72f3358995fc8367000f0b42103a78d1b; passport_csrf_token=4d713363889176dba46a4d28394acf2f";
+    private static final String DY_LIVE_COOKIE =        "enter_pc_once=1; hevc_supported=true; ttwid=1%7COnZEYGAxHABx6WRfArV8V0vfh1qUfP8AU2WYpG2ybdU%7C1754493043%7C867b28541b24aca9aec6379357aa2bff731e159fa7a804a767f575c8ff886639; __ac_nonce=06893707d00e64c4488d5; __ac_signature=_02B4Z6wo00f01m0zFcQAAIDDRDeLuhFSmo5tExFAAPPu88; odin_tt=e0bcb4ad345d3ed6915b71cab9469cb459681b743f65d870cb52329adfa8792b80633cf01c31edd9cf4874b743daacc7b789efd1727202b7ed3f6e7059ce43a72f3358995fc8367000f0b42103a78d1b; passport_csrf_token=4d713363889176dba46a4d28394acf2f";
 
     private void douyinLiveExtract(final String liveUrl) { douyinLiveExtract(liveUrl, null); }
 
