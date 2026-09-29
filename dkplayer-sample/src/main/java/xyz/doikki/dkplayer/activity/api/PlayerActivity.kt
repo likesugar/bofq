@@ -218,6 +218,23 @@ class PlayerActivity : BaseActivity<VideoView>() {
         super.onDestroy()
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        // singleTask 复用已有播放器：换源重播，不再叠一层
+        val u = intent?.getStringExtra(IntentKeys.URL) ?: return
+        if (u.isEmpty()) return
+        rawUrl = u
+        cacheOn = false
+        proxyOn = false
+        mVideoView!!.release()
+        mVideoView!!.setUrl(u, headersFor(u))
+        mVideoView!!.start()
+        requestedOrientation = if (u.contains("douyin") || u.contains("aweme"))
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        else
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
+
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) hideSystemBars()
@@ -253,10 +270,8 @@ class PlayerActivity : BaseActivity<VideoView>() {
             val controller = StandardVideoController(this)
             //按链接来源定方向：抖音竖屏，其余(哔哩哔哩等)横屏；不自动切换
             controller.setEnableOrientation(false)
-            val prepareView = PrepareView(this) //准备播放界面
+            val prepareView = PrepareView(this) //准备播放界面（不放封面图）
             prepareView.setClickStart()
-            val thumb = prepareView.findViewById<ImageView>(R.id.thumb) //封面图
-            Glide.with(this).load(THUMB).into(thumb)
             controller.addControlComponent(prepareView)
             controller.addControlComponent(CompleteView(this)) //自动完成播放界面
             controller.addControlComponent(ErrorView(this)) //错误界面
@@ -273,8 +288,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
 //                vodControlView.showBottomProgress(false);
                 controller.addControlComponent(vodControlView)
             }
-            val gestureControlView = GestureView(this) //滑动控制视图
-            controller.addControlComponent(gestureControlView)
+            // 手势组件：MxPanelView 本身继承 GestureView，不再叠加第二个，避免点击被吃
             mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
             mxPanel.onCacheClick = Runnable { toggleCapture() }
             mxPanel.onProxyClick = Runnable { replayWithProxy() }

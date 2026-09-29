@@ -48,6 +48,7 @@ public class MxPanelView extends GestureView {
 
     private ControlWrapper mWrapper;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private TextView tvInfo;
     private LinearLayout mMenu;
     private TextView btnMore;
     private int scaleIdx = 0, speedIdx = 2;
@@ -193,11 +194,21 @@ public class MxPanelView extends GestureView {
         mMenu.setVisibility(GONE);
         addView(sv, mlp);
 
-        // ---- 顶部：信息行 + 右上角 ⁝ ----
+        // ---- 顶部：信息行(video width/height) + 右上角 ⁝ ----
         LinearLayout top = new LinearLayout(getContext());
         top.setOrientation(LinearLayout.HORIZONTAL);
-        top.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(10), dp(6), dp(10), dp(6));
+
+        tvInfo = new TextView(getContext());
+        tvInfo.setTextColor(WHITE);
+        tvInfo.setTextSize(11);
+        tvInfo.setShadowLayer(2, 1, 1, 0xFF000000);
+        tvInfo.setText("video width:0 height:0");
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        tvInfo.setLayoutParams(ilp);
+        top.addView(tvInfo);
 
         btnMore = new TextView(getContext());
         btnMore.setText("⁝");
@@ -223,6 +234,18 @@ public class MxPanelView extends GestureView {
 
         addView(top, new LayoutParams(LayoutParams.MATCH_PARENT,
                 LayoutParams.WRAP_CONTENT, Gravity.TOP));
+
+        // 轮询刷新视频宽高
+        Runnable tick = new Runnable() {
+            public void run() {
+                if (mWrapper != null) {
+                    int[] s = mWrapper.getVideoSize();
+                    if (s != null) tvInfo.setText("video width:" + s[0] + " height:" + s[1]);
+                }
+                mHandler.postDelayed(this, 500);
+            }
+        };
+        mHandler.postDelayed(tick, 500);
     }
 
     private View sep() {
@@ -301,8 +324,10 @@ public class MxPanelView extends GestureView {
         // 信息行与 ⁝ 跟随控制层显示/隐藏；隐藏时收起面板并停保活
         if (isVisible) {
             btnMore.setVisibility(VISIBLE);
+            tvInfo.setVisibility(VISIBLE);
         } else {
             btnMore.setVisibility(GONE);
+            tvInfo.setVisibility(GONE);
             mMenu.setVisibility(GONE);
             stopKeepAlive();
         }
