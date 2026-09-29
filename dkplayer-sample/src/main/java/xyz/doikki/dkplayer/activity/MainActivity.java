@@ -80,6 +80,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         BiliProxy.start();
+        DlnaRenderer.start(this);   // 接收其他App投屏(DLNA)
 
         etInput = findViewById(R.id.et_url);
         list = findViewById(R.id.layout_records);
