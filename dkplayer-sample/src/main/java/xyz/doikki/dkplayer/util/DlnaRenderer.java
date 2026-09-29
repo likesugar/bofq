@@ -54,9 +54,8 @@ public final class DlnaRenderer {
             while (nis.hasMoreElements()) {
                 NetworkInterface ni = nis.nextElement();
                 if (!ni.isUp() || ni.isLoopback()) continue;
-                Enumeration<InterfaceAddress> ias = ni.getInterfaceAddresses();
-                while (ias.hasMoreElements()) {
-                    InetAddress a = ias.nextElement().getAddress();
+                for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                    InetAddress a = ia.getAddress();
                     if (!a.isLoopbackAddress() && a.getAddress().length == 4) return a.getHostAddress();
                 }
             }
