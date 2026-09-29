@@ -41,21 +41,21 @@ class PlayerActivity : BaseActivity<VideoView>() {
 
     /** 点「缓存」：当前视频切到本地代理，边播边存进 downloads */
     private fun cacheAndReplay() {
-        val u = rawUrl
+        val u = rawUrl ?: return
         if (cacheOn) {
             Toast.makeText(this, "已在边播边缓存", Toast.LENGTH_SHORT).show()
             return
         }
-        val eligible = u != null && u.startsWith("http") && !u.contains("127.0.0.1")
+        val eligible = u.startsWith("http") && !u.contains("127.0.0.1")
                 && !u.contains(".m3u8") && !u.contains(".flv")
         if (!eligible) {
             Toast.makeText(this, "此链接不支持缓存(m3u8/本地代理流)", Toast.LENGTH_SHORT).show()
             return
         }
-        val pos = mVideoView!!.currentPosition
+        val pos = mVideoView!!.currentPosition.toInt()
         cacheOn = true
         mVideoView!!.release()
-        mVideoView!!.skipPositionWhenPlay(pos.toLong())
+        mVideoView!!.skipPositionWhenPlay(pos)
         mVideoView!!.setUrl(xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getProxy(this).getProxyUrl(u))
         mVideoView!!.start()
         Toast.makeText(this, "边播边缓存已开启，文件在下载页", Toast.LENGTH_SHORT).show()
