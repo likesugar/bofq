@@ -285,12 +285,8 @@ class PlayerActivity : BaseActivity<VideoView>() {
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
             controller.setDismissTimeout(8000) //控件显示时长 4s→8s
-            //默认进入全屏；方向按源：抖音竖屏、哔哩哔哩横屏
+            //默认进入全屏（方向在拿到链接后按源设置）
             mVideoView!!.startFullScreen()
-            requestedOrientation = if (url != null && (url!!.contains("douyin") || url!!.contains("aweme")))
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
             //设置标题
             val title = it.getStringExtra(IntentKeys.TITLE)
@@ -331,6 +327,12 @@ class PlayerActivity : BaseActivity<VideoView>() {
 //            val header = hashMapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
             mVideoView.setUrl(url, url?.let { headersFor(it) })
             rawUrl = url
+
+            //方向按源：抖音竖屏、哔哩哔哩等横屏
+            requestedOrientation = if (url != null && (url!!.contains("douyin") || url!!.contains("aweme")))
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
             //保存播放进度
 //            mVideoView.setProgressManager(ProgressManagerImpl())
