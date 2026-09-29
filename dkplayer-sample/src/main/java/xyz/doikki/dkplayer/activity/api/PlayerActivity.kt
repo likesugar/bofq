@@ -68,6 +68,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             }
             val gestureControlView = GestureView(this) //滑动控制视图
             controller.addControlComponent(gestureControlView)
+            controller.addControlComponent(xyz.doikki.dkplayer.widget.component.MxPanelView(this)) //MX浮层:比例/倍速/截图/静音/旋转
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
 

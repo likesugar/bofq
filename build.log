@@ -117,9 +117,7 @@ To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gr
 > Task :dkplayer-videocache:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :dkplayer-players:exo:bundleLibCompileToJarRelease UP-TO-DATE
 > Task :dkplayer-players:ijk:bundleLibCompileToJarRelease UP-TO-DATE
-> Task :dkplayer-sample:compileReleaseKotlin UP-TO-DATE
 > Task :dkplayer-sample:javaPreCompileRelease UP-TO-DATE
-> Task :dkplayer-sample:compileReleaseJavaWithJavac UP-TO-DATE
 > Task :dkplayer-java:prepareReleaseArtProfile UP-TO-DATE
 > Task :dkplayer-ui:prepareReleaseArtProfile UP-TO-DATE
 > Task :dkplayer-videocache:prepareReleaseArtProfile UP-TO-DATE
@@ -130,16 +128,12 @@ To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gr
 > Task :dkplayer-videocache:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :dkplayer-players:exo:bundleLibRuntimeToJarRelease UP-TO-DATE
 > Task :dkplayer-players:ijk:bundleLibRuntimeToJarRelease UP-TO-DATE
-> Task :dkplayer-sample:expandReleaseArtProfileWildcards UP-TO-DATE
 > Task :dkplayer-sample:extractProguardFiles UP-TO-DATE
-> Task :dkplayer-sample:mergeReleaseGeneratedProguardFiles UP-TO-DATE
 > Task :dkplayer-java:processReleaseJavaRes NO-SOURCE
-> Task :dkplayer-sample:processReleaseJavaRes UP-TO-DATE
 > Task :dkplayer-ui:processReleaseJavaRes NO-SOURCE
 > Task :dkplayer-videocache:processReleaseJavaRes NO-SOURCE
 > Task :dkplayer-players:exo:processReleaseJavaRes NO-SOURCE
 > Task :dkplayer-players:ijk:processReleaseJavaRes NO-SOURCE
-> Task :dkplayer-sample:mergeReleaseJavaResource UP-TO-DATE
 > Task :dkplayer-sample:mergeReleaseStartupProfile UP-TO-DATE
 > Task :dkplayer-java:mergeReleaseShaders UP-TO-DATE
 > Task :dkplayer-java:compileReleaseShaders NO-SOURCE
@@ -172,46 +166,14 @@ To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gr
 > Task :dkplayer-sample:validateSigningRelease UP-TO-DATE
 > Task :dkplayer-sample:writeReleaseAppMetadata UP-TO-DATE
 > Task :dkplayer-sample:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :dkplayer-sample:compileReleaseKotlin
+
+> Task :dkplayer-sample:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :dkplayer-sample:expandReleaseArtProfileWildcards
+> Task :dkplayer-sample:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-sample:processReleaseJavaRes UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseJavaResource UP-TO-DATE
 > Task :dkplayer-sample:minifyReleaseWithR8
-> Task :dkplayer-sample:compileReleaseArtProfile
-> Task :dkplayer-sample:convertShrunkResourcesToBinaryRelease
-> Task :dkplayer-sample:optimizeReleaseResources
-> Task :dkplayer-sample:packageRelease
-> Task :dkplayer-sample:createReleaseApkListingFileRedirect UP-TO-DATE
-> Task :dkplayer-sample:assembleRelease
-
-BUILD SUCCESSFUL in 12m 33s
-141 actionable tasks: 6 executed, 135 up-to-date
-t.log -----
-2026-09-29T12:12:12.834+0800 [DEBUG] [org.gradle.launcher.daemon.registry.PersistentDaemonRegistry] Marking busy by address: [4b1e21e8-54d3-4266-8748-569c3ea0bb03 port:34417, addresses:[localhost/127.0.0.1]]
-2026-09-29T12:12:12.835+0800 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Waiting to acquire exclusive lock on daemon addresses registry.
-2026-09-29T12:12:12.836+0800 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Lock acquired on daemon addresses registry.
-2026-09-29T12:12:12.837+0800 [DEBUG] [org.gradle.cache.internal.DefaultFileLockManager] Releasing lock on daemon addresses registry.
-2026-09-29T12:12:12.837+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] resetting idle timer
-2026-09-29T12:12:12.839+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon is running. Sleeping until state changes.
-2026-09-29T12:12:12.858+0800 [INFO] [org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy] Daemon is about to start building Build{id=2f0ed9ea-b29c-4c8c-97fc-b46b782f6a19, currentDir=/home/z/my-project/DKVideoPlayer}. Dispatching build started information...
-2026-09-29T12:12:12.860+0800 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 21: dispatching org.gradle.launcher.daemon.protocol.BuildStarted@417af89f
-2026-09-29T12:12:12.861+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment] Configuring env variables: [PATH, KUBERNETES_PORT, TZ, ENVD_DIR, BUN_INSTALL_BIN, CLICOLOR_FORCE, JAVA_HOME, TERM, GODEBUG, KUBERNETES_SERVICE_HOST, ANDROID_HOME, UV_CACHE_DIR, BUN_RUNTIME_TRANSPILER_CACHE_PATH, DATABASE_URL, MAIL, CLAWHUB_WORKDIR, aliyun_log_crd_user_defined_id, LOGNAME, NO_COLOR, PWD, GATEWAY_TOKEN, CLAWHUB_DISABLE_TELEMETRY, KUBERNETES_PORT_443_TCP, KUBERNETES_PORT_443_TCP_ADDR, SHELL, UV_PYTHON, KUBERNETES_PORT_443_TCP_PROTO, OLDPWD, BUN_INSTALL, USER, CLICOLOR, KUBERNETES_SERVICE_PORT, PYTHONDONTWRITEBYTECODE, PYTHONUNBUFFERED, DEBIAN_FRONTEND, HOSTNAME, POD_NAME, ECI_CONTAINER_TYPE, KUBERNETES_PORT_443_TCP_PORT, POD_UID, LC_CTYPE, KUBERNETES_SERVICE_PORT_HTTPS, SHLVL, HOME]
-2026-09-29T12:12:12.879+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.LogToClient] About to start relaying all logs to the client via the connection.
-2026-09-29T12:12:12.880+0800 [INFO] [org.gradle.launcher.daemon.server.exec.LogToClient] The client will now receive all logging from the daemon (pid: 13779). The daemon log file: /home/z/.gradle/daemon/8.11.1/daemon-13779.out.log
-2026-09-29T12:12:12.893+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon] Requesting daemon stop after processing Build{id=2f0ed9ea-b29c-4c8c-97fc-b46b782f6a19, currentDir=/home/z/my-project/DKVideoPlayer}
-2026-09-29T12:12:12.893+0800 [LIFECYCLE] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Daemon will be stopped at the end of the build 
-2026-09-29T12:12:12.894+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Stop as soon as idle requested. The daemon is busy
-2026-09-29T12:12:12.895+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has started executing the build.
-2026-09-29T12:12:12.895+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] Executing build with daemon context: DefaultDaemonContext[uid=72b1fa14-8c02-4cc9-b6fd-38b8a48cd7a0,javaHome=/home/z/my-project/android_build/jdk17,javaVersion=17,javaVendor=Eclipse Adoptium,daemonRegistryDir=/home/z/.gradle/daemon,pid=13779,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx2048M,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]
-2026-09-29T12:12:12.897+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon stop has been requested. Sleeping until state changes.
-WARNING: The specified Android SDK Build Tools version (34.0.0) is ignored, as it is below the minimum supported version (35.0.0) for Android Gradle Plugin 8.9.1.
-Android SDK Build Tools 35.0.0 will be used.
-To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gradle file, as each version of the Android Gradle Plugin now has a default version of the build tools.----- End of the daemon log -----
-
-
-FAILURE: Build failed with an exception.
-
-* What went wrong:
-Gradle build daemon disappeared unexpectedly (it may have been killed or may have crashed)
-
-* Try:
-> Run with --stacktrace option to get the stack trace.
-> Run with --info or --debug option to get more log output.
-> Run with --scan to get full insights.
-> Get more help at https://help.gradle.org.
