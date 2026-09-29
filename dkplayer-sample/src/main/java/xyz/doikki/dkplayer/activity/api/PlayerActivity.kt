@@ -73,7 +73,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
             //默认进入全屏播放
-            controller.startFullScreen()
+            mVideoView!!.startFullScreen()
 
             //设置标题
             val title = it.getStringExtra(IntentKeys.TITLE)
