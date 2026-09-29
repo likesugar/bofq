@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.text.TextUtils
 import android.view.View
 import android.widget.EditText
+import android.widget.Toast
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import xyz.doikki.dkplayer.R
@@ -54,7 +55,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
         val pos = mVideoView!!.currentPosition
         cacheOn = true
         mVideoView!!.release()
-        mVideoView!!.skipPositionWhenPlay(pos)
+        mVideoView!!.skipPositionWhenPlay(pos.toLong())
         mVideoView!!.setUrl(xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getProxy(this).getProxyUrl(u))
         mVideoView!!.start()
         Toast.makeText(this, "边播边缓存已开启，文件在下载页", Toast.LENGTH_SHORT).show()
