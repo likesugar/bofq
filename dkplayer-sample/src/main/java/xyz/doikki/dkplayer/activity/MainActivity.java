@@ -614,7 +614,8 @@ public class MainActivity extends Activity {
     /** 油猴脚本：下载并注入「抖音网页版全能优化」(greasyfork 584735) */
     private String userscriptCache = null;
     private boolean userscriptTried = false;
-    private static final String USERSCRIPT_URL = "https://update.greasyfork.org/scripts/584735/code/script.user.js";
+    private static final String USERSCRIPT_URL = "https://update.greasyfork.org/scripts/584735/%E6%8A%96%E9%9F%B3%E7%BD%91%E9%A1%B5%E7%89%88%E5%85%A8%E8%83%BD%E4%BC%98%E5%8C%96.user.js";
+    private static final String USERSCRIPT_VUE = "https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.min.js";
 
     private void injectUserscript(final WebView view) {
         if (userscriptCache != null) { runUserscript(view); return; }
