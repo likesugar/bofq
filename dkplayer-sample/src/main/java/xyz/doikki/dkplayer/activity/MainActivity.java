@@ -365,6 +365,10 @@ public class MainActivity extends Activity {
         }
     }
 
+    private int dp(int v) {
+        return (int) (v * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
     /** 把解析网页全屏挂到窗口最上层并可见，右上角 ✕ 可手动收起 */
     private void showParseWeb() {
         android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
