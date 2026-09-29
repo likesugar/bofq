@@ -251,8 +251,8 @@ class PlayerActivity : BaseActivity<VideoView>() {
         mVideoView = findViewById(R.id.player)
         intent?.let {
             val controller = StandardVideoController(this)
-            //根据屏幕方向自动进入/退出全屏
-            controller.setEnableOrientation(true)
+            //按链接来源定方向：抖音竖屏，其余(哔哩哔哩等)横屏；不自动切换
+            controller.setEnableOrientation(false)
             val prepareView = PrepareView(this) //准备播放界面
             prepareView.setClickStart()
             val thumb = prepareView.findViewById<ImageView>(R.id.thumb) //封面图
@@ -285,9 +285,12 @@ class PlayerActivity : BaseActivity<VideoView>() {
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
             controller.setDismissTimeout(8000) //控件显示时长 4s→8s
-            //默认进入全屏播放（横屏）
+            //默认进入全屏；方向按源：抖音竖屏、哔哩哔哩横屏
             mVideoView!!.startFullScreen()
-            requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            requestedOrientation = if (url != null && (url!!.contains("douyin") || url!!.contains("aweme")))
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
             //设置标题
             val title = it.getStringExtra(IntentKeys.TITLE)

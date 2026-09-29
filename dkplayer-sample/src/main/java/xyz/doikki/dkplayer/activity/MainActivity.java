@@ -60,6 +60,8 @@ public class MainActivity extends Activity {
     private EditText etInput;
     private LinearLayout list;
     private final Set<String> seenMedia = new HashSet<>();
+    private final java.util.List<String> douyinCands = new java.util.ArrayList<>();
+    private boolean douyinPickScheduled = false;
     private final Handler main = new Handler(Looper.getMainLooper());
     private boolean mobileUA = true;
     private int recordId = 0;
@@ -185,6 +187,8 @@ public class MainActivity extends Activity {
         if (url.contains("bilibili.com") || url.contains("b23.tv")) {
             resolveBiliViaPeanut(url);
         } else {
+            synchronized (douyinCands) { douyinCands.clear(); }
+            douyinPickScheduled = false;
             ensureBgWeb();
             bgWeb.loadUrl(url);
         }
@@ -296,7 +300,13 @@ public class MainActivity extends Activity {
                         .replaceAll("ratio=[a-zA-Z0-9_]+", "ratio=1080p")
                         .replaceAll("biz_resolution(=|%3D|%3d)[a-zA-Z0-9_x]+", "biz_resolution$11088x1920");
                     final String f = hi;
-                    main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+                    synchronized (douyinCands) {
+                        if (!douyinCands.contains(f)) douyinCands.add(f);
+                    }
+                    if (!douyinPickScheduled) {
+                        douyinPickScheduled = true;
+                        main.postDelayed(new Runnable() { public void run() { finishDouyinPick(); } }, 6000);
+                    }
                     if (l.contains(".m3u8")) {
                         new Thread(new Runnable() { public void run() { pickBestVariant(url); } }).start();
                     }
@@ -337,7 +347,9 @@ public class MainActivity extends Activity {
             }
             if (best != null && seenMedia.add(best)) {
                 final String f = best;
-                main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+                synchronized (douyinCands) {
+                    if (!douyinCands.contains(f)) douyinCands.add(f);
+                }
             }
         } catch (Throwable ignored) {}
     }
@@ -538,6 +550,46 @@ public class MainActivity extends Activity {
             c.setRequestMethod("HEAD");
             c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13) Chrome/120 Mobile");
             c.setRequestProperty("Referer", "https://www.bilibili.com/");
+            long len = c.getContentLengthLong();
+            return len < 0 ? 0 : len;
+        } catch (Throwable e) {
+            return -1;
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
+
+    /** 抖音候选收集6秒后按体积择优，自动开播最大者 */
+    private void finishDouyinPick() {
+        java.util.List<String> snapshot;
+        synchronized (douyinCands) { snapshot = new java.util.ArrayList<>(douyinCands); }
+        if (snapshot.isEmpty()) {
+            if (parsing) main.postDelayed(new Runnable() { public void run() { finishDouyinPick(); } }, 2000);
+            return;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                String best = snapshot.get(0);
+                long bestLen = -1;
+                for (String u : snapshot) {
+                    long len = remoteSizeDouyin(u);
+                    if (len > bestLen) { bestLen = len; best = u; }
+                }
+                final String f = best;
+                main.post(new Runnable() { public void run() { addRecord("抖音", f); } });
+            }
+        }).start();
+    }
+
+    private long remoteSizeDouyin(String url) {
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new java.net.URL(url).openConnection();
+            c.setConnectTimeout(6000);
+            c.setReadTimeout(6000);
+            c.setRequestMethod("HEAD");
+            c.setRequestProperty("User-Agent", UA_MOBILE);
+            c.setRequestProperty("Referer", "https://live.douyin.com/");
             long len = c.getContentLengthLong();
             return len < 0 ? 0 : len;
         } catch (Throwable e) {

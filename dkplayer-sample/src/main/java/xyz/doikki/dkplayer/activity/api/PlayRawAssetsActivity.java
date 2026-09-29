@@ -58,8 +58,8 @@ public class PlayRawAssetsActivity extends BaseActivity<VideoView> {
                     String url = rawResourceDataSource.getUri().toString();
                     mVideoView.setUrl(url);
                 } else { //MediaPlayer,IjkPlayer
-                    String url = "android.resource://" + getPackageName() + "/" + R.raw.movie;
-                    mVideoView.setUrl(url);
+                    // 内置样例视频已移除
+                    mVideoView.setUrl("file:///android_asset/" + "test.mp4");
                 }
                 break;
             case R.id.btn_assets:
