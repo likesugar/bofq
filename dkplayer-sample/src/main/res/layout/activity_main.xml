@@ -2,16 +2,16 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0f0f23">
+    android:background="#ffffff">
 
-    <!-- 顶部浮动操作栏：输入框 + 回车按钮 -->
+    <!-- 顶部操作栏：输入框 + 解析 + 切电脑UA + 记录 -->
     <LinearLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="#190f0f23"
+        android:background="#E9E9E9"
         android:padding="8dp">
 
         <EditText
@@ -19,91 +19,140 @@
             android:layout_width="0dp"
             android:layout_height="36dp"
             android:layout_weight="1"
-            android:hint="粘贴视频链接"
-            android:textColorHint="#666666"
-            android:textColor="#ffffff"
-            android:background="#4D1e1e3f"
-            android:padding="8dp"
+            android:hint="粘贴直播间链接或分享文"
+            android:textColorHint="#888888"
+            android:textColor="#222222"
+            android:background="#B3AEB5"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
             android:textSize="13sp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:imeOptions="actionDone"
+            android:imeOptions="actionGo"
             android:inputType="textUri"
-            android:gravity="center_vertical"/>
+            android:maxLines="1"/>
 
-        <Button
-            android:id="@+id/btn_go"
-            android:layout_width="36dp"
+        <TextView
+            android:id="@+id/btn_parse"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
-            android:text="→"
+            android:gravity="center"
+            android:text="解析"
             android:textColor="#ffffff"
-            android:textSize="16sp"
-            android:background="#4D2ed573"
-            android:layout_marginLeft="8dp"
-            android:padding="0dp"
-            android:minWidth="0dp"
-            android:minHeight="0dp"/>
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:background="#F2A7B3"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:layout_marginLeft="8dp"/>
+
+        <TextView
+            android:id="@+id/btn_ua"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="切电脑UA"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:background="#A9D9B8"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:layout_marginLeft="8dp"/>
+
+        <TextView
+            android:id="@+id/btn_records"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:gravity="center"
+            android:text="记录"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:background="#F2A7B3"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:layout_marginLeft="8dp"/>
     </LinearLayout>
 
-    <!-- 媒体管理面板（默认隐藏） -->
+    <!-- 底部固定记录面板（默认隐藏，点"记录"显示） -->
     <LinearLayout
-        android:id="@+id/media_panel"
+        android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:background="#191a1a3e"
-        android:visibility="gone"
-        android:paddingBottom="56dp">
+        android:background="#CC191a3e"
+        android:visibility="gone">
 
-        <TextView
+        <ScrollView
+            android:id="@+id/scroll_records"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="本机视频"
-            android:textColor="#88ffffff"
-            android:textSize="12sp"
-            android:padding="8dp"/>
+            android:layout_height="220dp">
 
-        <ListView
-            android:id="@+id/list_media"
-            android:layout_width="match_parent"
-            android:layout_height="260dp"/>
+            <LinearLayout
+                android:id="@+id/layout_records"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="8dp"/>
+        </ScrollView>
     </LinearLayout>
 
-    <!-- 底部栏：功能大全 / 媒体管理 -->
+    <!-- 底部栏：功能大全 + 播放器 -->
     <LinearLayout
         android:id="@+id/bottom_bar"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="horizontal"
-        android:background="#190f0f23">
+        android:background="#E9E9E9">
 
-        <Button
+        <TextView
             android:id="@+id/btn_features"
             android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_height="40dp"
             android:layout_weight="1"
-            android:layout_margin="6dp"
+            android:gravity="center"
             android:text="功能大全"
             android:textColor="#ffffff"
-            android:textSize="13sp"
-            android:background="#4D1e1e3f"
-            android:minWidth="0dp"
-            android:minHeight="0dp"/>
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:background="#F2A7B3"
+            android:layout_margin="6dp"/>
 
-        <Button
-            android:id="@+id/btn_media"
+        <TextView
+            android:id="@+id/btn_player"
             android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_height="40dp"
             android:layout_weight="1"
-            android:layout_margin="6dp"
-            android:text="媒体管理"
+            android:gravity="center"
+            android:text="播放器"
             android:textColor="#ffffff"
-            android:textSize="13sp"
-            android:background="#4D1e1e3f"
-            android:minWidth="0dp"
-            android:minHeight="0dp"/>
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:background="#A9D9B8"
+            android:layout_margin="6dp"/>
     </LinearLayout>
+
+    <!-- 右下角悬浮球：点击切换顶部栏显示/隐藏 -->
+    <FrameLayout
+        android:id="@+id/btn_toggle_top"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:layout_marginBottom="72dp"
+        android:background="@drawable/fab_circle"
+        android:elevation="8dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="≡"
+            android:textColor="#ffffff"
+            android:textSize="20sp"/>
+    </FrameLayout>
 
 </FrameLayout>
