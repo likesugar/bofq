@@ -189,6 +189,10 @@ public class MainActivity extends Activity {
         if (url.contains("bilibili.com") || url.contains("b23.tv")) {
             ensureBgWeb(true);   // B站解析过程可见
             resolveBiliViaPeanut(url);
+        } else if (url.contains("live.douyin.com")) {
+            // 抖音直播：douyin-live-extractor 方案(抓页面+pace_f JSON+清晰度提取)
+            ensureBgWeb();
+            douyinLiveExtract(url);
         } else {
             synchronized (douyinCands) { douyinCands.clear(); }
             douyinPickScheduled = false;
@@ -592,6 +596,99 @@ public class MainActivity extends Activity {
         } finally {
             if (c != null) c.disconnect();
         }
+    }
+
+    /** 抖音直播解析：移植 PlutoGuo/douyin-live-extractor（无签名，GET页面+正则+JSON） */
+    private static final String DY_LIVE_COOKIE =
+        "enter_pc_once=1; hevc_supported=true; ttwid=1%7COnZEYGAxHABx6WRfArV8V0vfh1qUfP8AU2WYpG2ybdU%7C1754493043%7C867b28541b24aca9aec6379357aa2bff731e159fa7a804a767f575c8ff886639; __ac_nonce=06893707d00e64c4488d5; __ac_signature=_02B4Z6wo00f01m0zFcQAAIDDRDeLuhFSmo5tExFAAPPu88; odin_tt=e0bcb4ad345d3ed6915b71cab9469cb459681b743f65d870cb52329adfa8792b80633cf01c31edd9cf4874b743daacc7b789efd1727202b7ed3f6e7059ce43a72f3358995fc8367000f0b42103a78d1b; passport_csrf_token=4d713363889176dba46a4d28394acf2f";
+
+    private void douyinLiveExtract(final String liveUrl) {
+        new Thread(new Runnable() { public void run() {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new java.net.URL(liveUrl).openConnection();
+                c.setConnectTimeout(10000); c.setReadTimeout(10000);
+                c.setInstanceFollowRedirects(true);
+                c.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36");
+                c.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+                c.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9");
+                c.setRequestProperty("Cookie", DY_LIVE_COOKIE);
+                if (c.getResponseCode() != 200) { c.disconnect(); failDouyin("页面请求失败:" + c.getResponseCode()); return; }
+                java.io.InputStream ins = c.getInputStream();
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                byte[] rb = new byte[8192]; int rn;
+                while ((rn = ins.read(rb)) > 0) bo.write(rb, 0, rn);
+                ins.close(); c.disconnect();
+                String html = bo.toString("UTF-8");
+
+                // 主模式 + 备用模式（与 extractor 的 patterns 一致）
+                java.util.List<String> matches = new java.util.ArrayList<>();
+                String[] patterns = {
+                    "self\\.__pace_f\\.push\\(\\[1,\\s*\"(\\{.*?data.*?\\})\"\\]\\)",
+                    "self\\.__pace_f\\.push\\(\\[1,\\s*\"(\\{.*?common.*?data.*?\\})\"\\]\\)",
+                    "\"(\\{.*?common.*?stream_name.*?data.*?\\})\"",
+                    "self\\.__pace_f\\.push\\(\\[1,\\s*\"([^\"]*\\{.*?data.*?\\}[^\"]*)\"\\]\\)",
+                    "\"data\":\\s*(\\{.*?\"origin\".*?\\})"
+                };
+                for (String p : patterns) {
+                    Matcher pm = Pattern.compile(p, Pattern.DOTALL).matcher(html);
+                    while (pm.find()) matches.add(pm.group(1));
+                    if (!matches.isEmpty()) break;
+                }
+                if (matches.isEmpty()) { failDouyin("页面里没有流数据(未开播或需更新Cookie)"); return; }
+
+                org.json.JSONObject streamData = null;
+                for (String m : matches) {
+                    String jsonStr = m.replace("\\\"", "\"").replace("\\\\", "\\");
+                    org.json.JSONObject pd = tryJson(jsonStr);
+                    if (pd == null) {
+                        String cleaned = jsonStr.replaceAll("^[^{]*", "").replaceAll("[^}]*$", "");
+                        pd = tryJson(cleaned);
+                    }
+                    if (pd != null && pd.has("data")) { streamData = pd; break; }
+                }
+                if (streamData == null) { failDouyin("流数据JSON解析失败"); return; }
+
+                org.json.JSONObject data = streamData.getJSONObject("data");
+                // 原画优先，依次降级
+                String[] qualities = {"origin", "uhd", "hd", "sd", "ld", "md"};
+                for (String q : qualities) {
+                    if (!data.has(q)) continue;
+                    org.json.JSONObject qd = data.getJSONObject(q);
+                    String[][] lines = {{"main"}, {"backup"}};
+                    for (String[] line : lines) {
+                        if (!qd.has(line[0])) continue;
+                        org.json.JSONObject ld = qd.getJSONObject(line[0]);
+                        String u = ld.has("hls") ? ld.optString("hls", "") : "";
+                        if (u.isEmpty()) u = ld.optString("flv", "");
+                        if (!u.isEmpty()) {
+                            u = u.replace("\\u0026", "&").replace("\\/", "/");
+                            final String fu = u;
+                            final String fq = q;
+                            main.post(new Runnable() { public void run() {
+                                addRecord("抖音直播", fu);
+                                parseDone();
+                                PlayerActivity.start(MainActivity.this, fu, "抖音直播", true, false);
+                            }});
+                            return;
+                        }
+                    }
+                }
+                failDouyin("各清晰度都没取到流地址");
+            } catch (Throwable e) {
+                failDouyin("解析异常:" + e.getMessage());
+            }
+        }}).start();
+    }
+
+    private org.json.JSONObject tryJson(String s) {
+        try { return new org.json.JSONObject(s); } catch (Throwable e) { return null; }
+    }
+
+    private void failDouyin(final String msg) {
+        main.post(new Runnable() { public void run() {
+            addRecord("抖音直播", msg);
+            parseDone();
+        }});
     }
 
     /** 抖音候选收集6秒后按体积择优，自动开播最大者 */
