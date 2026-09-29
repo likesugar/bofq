@@ -1,203 +1,131 @@
 package xyz.doikki.dkplayer.activity
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.pm.PackageManager
+import android.database.Cursor
 import android.os.Build
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
+import android.provider.MediaStore
+import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.EditText
+import android.widget.ListView
 import android.widget.Toast
-import androidx.fragment.app.Fragment
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.navigation.NavigationBarView
+import androidx.appcompat.app.AppCompatActivity
 import xyz.doikki.dkplayer.R
-import xyz.doikki.dkplayer.fragment.main.ApiFragment
-import xyz.doikki.dkplayer.fragment.main.ExtensionFragment
-import xyz.doikki.dkplayer.fragment.main.ListFragment
-import xyz.doikki.dkplayer.fragment.main.PipFragment
-import xyz.doikki.dkplayer.util.PIPManager
-import xyz.doikki.dkplayer.util.Tag
-import xyz.doikki.dkplayer.util.Utils
-import xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager
-import xyz.doikki.videoplayer.exo.ExoMediaPlayerFactory
-import xyz.doikki.videoplayer.ijk.IjkPlayerFactory
-import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory
-import xyz.doikki.videoplayer.player.PlayerFactory
-import xyz.doikki.videoplayer.player.VideoView
-import xyz.doikki.videoplayer.player.VideoViewManager
-import java.io.*
+import xyz.doikki.dkplayer.activity.api.ParallelPlayActivity
+import xyz.doikki.dkplayer.activity.api.PlayerActivity
+import xyz.doikki.dkplayer.activity.api.PlayRawAssetsActivity
+import xyz.doikki.dkplayer.activity.extend.ADActivity
+import xyz.doikki.dkplayer.activity.extend.CacheActivity
+import xyz.doikki.dkplayer.activity.extend.CustomExoPlayerActivity
+import xyz.doikki.dkplayer.activity.extend.CustomIjkPlayerActivity
+import xyz.doikki.dkplayer.activity.extend.DefinitionPlayerActivity
+import xyz.doikki.dkplayer.activity.extend.FullScreenActivity
+import xyz.doikki.dkplayer.activity.extend.PadActivity
+import xyz.doikki.dkplayer.activity.extend.PlayListActivity
+import xyz.doikki.dkplayer.activity.pip.PIPListActivity
+import xyz.doikki.dkplayer.activity.CpuInfoActivity
 
-class MainActivity : BaseActivity<VideoView>(), NavigationBarView.OnItemSelectedListener {
+class MainActivity : AppCompatActivity() {
 
-    private val mFragments: MutableList<Fragment> = ArrayList()
-    override fun getLayoutResId(): Int {
-        return R.layout.activity_main
-    }
+    private lateinit var etUrl: EditText
+    private lateinit var mediaPanel: View
+    private lateinit var listMedia: ListView
+    private val mediaItems = ArrayList<String>()
+    private val mediaPaths = ArrayList<String>()
 
-    override fun enableBack(): Boolean {
-        return false
-    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        etUrl = findViewById(R.id.et_url)
+        mediaPanel = findViewById(R.id.media_panel)
+        listMedia = findViewById(R.id.list_media)
 
-    override fun initView() {
-        super.initView()
-        copyAssetsFile()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 10000)
+        findViewById<View>(R.id.btn_go).setOnClickListener { playInput() }
+        etUrl.setOnEditorActionListener { _, _, _ ->
+            playInput(); true
         }
-        //检测当前是用的哪个播放器
-        when (Utils.getCurrentPlayerFactory()) {
-            is ExoMediaPlayerFactory -> {
-                setTitle(resources.getString(R.string.app_name) + " (ExoPlayer)")
-            }
-            is IjkPlayerFactory -> {
-                setTitle(resources.getString(R.string.app_name) + " (IjkPlayer)")
-            }
-            is AndroidMediaPlayerFactory -> {
-                setTitle(resources.getString(R.string.app_name) + " (MediaPlayer)")
-            }
-            else -> {
-                setTitle(resources.getString(R.string.app_name) + " (unknown)")
-            }
+        findViewById<View>(R.id.btn_features).setOnClickListener { showFeatures() }
+        findViewById<View>(R.id.btn_media).setOnClickListener { toggleMedia() }
+
+        requestStorage()
+        listMedia.setOnItemClickListener { _, _, pos, _ ->
+            mediaPanel.visibility = View.GONE
+            PlayerActivity.start(this, "file://" + mediaPaths[pos], mediaItems[pos], false, false)
         }
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.nav_view)
-        bottomNavigationView.setOnItemSelectedListener(this)
-        mFragments.add(ApiFragment())
-        mFragments.add(ListFragment())
-        mFragments.add(ExtensionFragment())
-        mFragments.add(PipFragment())
-        supportFragmentManager.beginTransaction()
-            .add(R.id.layout_content, mFragments[0])
-            .commitAllowingStateLoss()
-        mCurrentIndex = 0
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val itemId = item.itemId
-        when (itemId) {
-            R.id.close_float_window -> {
-                PIPManager.getInstance().stopFloatWindow()
-                PIPManager.getInstance().reset()
-            }
-            R.id.clear_cache -> if (ProxyVideoCacheManager.clearAllCache(this)) {
-                Toast.makeText(this, "清除缓存成功", Toast.LENGTH_SHORT).show()
-            }
-            R.id.cpu_info -> CpuInfoActivity.start(this)
+    private fun playInput() {
+        val url = etUrl.text.toString().trim()
+        if (url.isEmpty()) {
+            Toast.makeText(this, "请输入视频链接", Toast.LENGTH_SHORT).show()
+            return
         }
-        if (itemId == R.id.ijk || itemId == R.id.exo || itemId == R.id.media) {
-            //切换播放核心，不推荐这么做，我这么写只是为了方便测试
-            val config = VideoViewManager.getConfig()
-            try {
-                val mPlayerFactoryField = config.javaClass.getDeclaredField("mPlayerFactory")
-                mPlayerFactoryField.isAccessible = true
-                var playerFactory: PlayerFactory<*>? = null
-                when (itemId) {
-                    R.id.ijk -> {
-                        playerFactory = IjkPlayerFactory.create()
-                        setTitle(resources.getString(R.string.app_name) + " (IjkPlayer)")
-                    }
-                    R.id.exo -> {
-                        playerFactory = ExoMediaPlayerFactory.create()
-                        setTitle(resources.getString(R.string.app_name) + " (ExoPlayer)")
-                    }
-                    R.id.media -> {
-                        playerFactory = AndroidMediaPlayerFactory.create()
-                        setTitle(resources.getString(R.string.app_name) + " (MediaPlayer)")
-                    }
-                }
-                mPlayerFactoryField[config] = playerFactory
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+        PlayerActivity.start(this, url, url, false, false)
+    }
+
+    private fun showFeatures() {
+        val names = arrayOf(
+            "全屏播放", "播放列表", "抖音上下滑", "画中画列表",
+            "自定义控制器(Exo)", "自定义控制器(IJK)", "多清晰度", "广告示例",
+            "缓存管理", "平板适配", "并行播放", "Raw资源播放", "CPU信息"
+        )
+        val acts = arrayOf(
+            FullScreenActivity::class.java, PlayListActivity::class.java,
+            xyz.doikki.dkplayer.activity.list.tiktok.TikTokActivity::class.java,
+            PIPListActivity::class.java, CustomExoPlayerActivity::class.java,
+            CustomIjkPlayerActivity::class.java, DefinitionPlayerActivity::class.java,
+            ADActivity::class.java, CacheActivity::class.java, PadActivity::class.java,
+            ParallelPlayActivity::class.java, PlayRawAssetsActivity::class.java,
+            CpuInfoActivity::class.java
+        )
+        AlertDialog.Builder(this)
+            .setTitle("功能大全")
+            .setItems(names) { _, which -> startActivity(android.content.Intent(this, acts[which])) }
+            .show()
+    }
+
+    private fun toggleMedia() {
+        if (mediaPanel.visibility == View.VISIBLE) {
+            mediaPanel.visibility = View.GONE
+            return
         }
-        return super.onOptionsItemSelected(item)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
-        val index: Int
-        val itemId = menuItem.itemId
-        index = when (itemId) {
-            R.id.tab_api -> 0
-            R.id.tab_list -> 1
-            R.id.tab_extension -> 2
-            R.id.tab_pip -> 3
-            else -> 0
+        loadMedia()
+        if (mediaItems.isEmpty()) {
+            Toast.makeText(this, "未找到本机视频", Toast.LENGTH_SHORT).show()
+            return
         }
-        if (mCurrentIndex != index) {
-            //切换tab，释放正在播放的播放器
-            if (mCurrentIndex == 1) {
-                videoViewManager.releaseByTag(Tag.LIST)
-                videoViewManager.releaseByTag(Tag.SEAMLESS, false) //注意不能移除
-            }
-            val transaction = supportFragmentManager.beginTransaction()
-            val fragment = mFragments[index]
-            val curFragment = mFragments[mCurrentIndex]
-            if (fragment.isAdded) {
-                transaction.hide(curFragment).show(fragment)
-            } else {
-                transaction.add(R.id.layout_content, fragment).hide(curFragment)
-            }
-            transaction.commitAllowingStateLoss()
-            mCurrentIndex = index
-        }
-        return true
+        listMedia.adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, mediaItems)
+        mediaPanel.visibility = View.VISIBLE
     }
 
-    override fun onBackPressed() {
-        if (videoViewManager.onBackPress(Tag.LIST)) return
-        if (videoViewManager.onBackPress(Tag.SEAMLESS)) return
-        super.onBackPressed()
-    }
-
-    @SuppressLint("MissingSuperCall")
-    override fun onSaveInstanceState(outState: Bundle) {
-    }
-
-    companion object {
-        @JvmField
-        var mCurrentIndex = 0
-    }
-
-    private fun copyAssetsFile(): Boolean {
-        val outFile = File(externalCacheDir, "test.mp4")
-        if (outFile.parentFile?.exists() != true) {
-            outFile.parentFile!!.mkdirs()
-        }
-
-        var inputStream: InputStream? = null
-        var out: OutputStream? = null
-
+    private fun loadMedia() {
+        mediaItems.clear()
+        mediaPaths.clear()
         try {
-            inputStream = assets.open("test.mp4")
-            out = FileOutputStream(outFile)
+            val cur: Cursor? = contentResolver.query(
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Video.Media.DISPLAY_NAME, MediaStore.Video.Media.DATA),
+                null, null, MediaStore.Video.Media.DATE_ADDED + " DESC")
+            cur?.use { c ->
+                while (c.moveToNext()) {
+                    mediaItems.add(c.getString(0) ?: "video")
+                    mediaPaths.add(c.getString(1) ?: "")
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
-            val buffer = ByteArray(1024)
-            var read: Int = inputStream.read(buffer)
-            while (read != -1) {
-                out.write(buffer, 0, read)
-                read = inputStream.read(buffer)
-            }
-        } catch (e: IOException) {
-            return false
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close()
-                } catch (e: IOException) {
-                }
-            }
-            if (out != null) {
-                try {
-                    out.flush()
-                    out.close()
-                } catch (e: IOException) {
-                }
+    private fun requestStorage() {
+        if (Build.VERSION.SDK_INT in 23..32) {
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 10001)
             }
         }
-        return true
     }
 }
