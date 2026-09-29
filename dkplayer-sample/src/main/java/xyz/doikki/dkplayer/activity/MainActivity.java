@@ -42,6 +42,7 @@ import xyz.doikki.dkplayer.activity.extend.PlayListActivity;
 import xyz.doikki.dkplayer.activity.list.tiktok.TikTokActivity;
 import xyz.doikki.dkplayer.activity.pip.PIPActivity;
 import xyz.doikki.dkplayer.util.BiliProxy;
+import xyz.doikki.dkplayer.util.DlnaRenderer;
 
 /**
  * 首页（照抖音直播解析源码样式）：
