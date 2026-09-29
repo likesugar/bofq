@@ -89,20 +89,36 @@ public class MxPanelView extends GestureView {
         rowMain.setGravity(Gravity.CENTER_VERTICAL);
         mPanel.addView(rowMain);
 
-        String[] mains = {"比例", "倍速", "截图", "静音", "旋转", "缓存", "代理"};
+        String[] mains = {"比例", "倍速", "截图", "静音", "旋转"};
         for (int i = 0; i < mains.length; i++) {
             final int idx = i;
             TextView b = circleBtn(mains[i]);
             b.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     if (idx == 2) { doShot(); return; }   // 截图直接执行
-                    if (idx == 5) { if (onCacheClick != null) onCacheClick.run(); return; }   // 缓存交给播放页处理
-                    if (idx == 6) { if (onProxyClick != null) onProxyClick.run(); return; }   // 代理交给播放页处理
                     expanded = (expanded == idx) ? -1 : idx;
                     showSub();
                 }
             });
             rowMain.addView(b);
+        }
+
+        // 第二排：缓存 / 代理（固定可见，不挤在滚动区里）
+        LinearLayout rowMain2 = new LinearLayout(getContext());
+        rowMain2.setOrientation(LinearLayout.HORIZONTAL);
+        rowMain2.setGravity(Gravity.CENTER_VERTICAL);
+        mPanel.addView(rowMain2);
+        String[] actions = {"缓存", "代理"};
+        for (int i = 0; i < actions.length; i++) {
+            final int idx = i;
+            TextView b = circleBtn(actions[i]);
+            b.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    if (idx == 0) { if (onCacheClick != null) onCacheClick.run(); return; }
+                    if (idx == 1) { if (onProxyClick != null) onProxyClick.run(); return; }
+                }
+            });
+            rowMain2.addView(b);
         }
 
         rowSub = new LinearLayout(getContext());

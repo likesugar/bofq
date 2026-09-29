@@ -88,26 +88,127 @@ class PlayerActivity : BaseActivity<VideoView>() {
         }
     }
 
-    /** 点「缓存」：当前视频切到本地代理，边播边存进 downloads */
-    private fun cacheAndReplay() {
+    /** 点「缓存」：实时抓取播放器当前流写成文件（再点一次停止），文件进下载页 */
+    private var capturing = false
+    private var captureThread: Thread? = null
+
+    private fun toggleCapture() {
+        if (capturing) {
+            capturing = false
+            Toast.makeText(this, "已停止抓取", Toast.LENGTH_SHORT).show()
+            return
+        }
         val u = rawUrl ?: return
-        if (cacheOn) {
-            Toast.makeText(this, "已在边播边缓存", Toast.LENGTH_SHORT).show()
+        if (!u.startsWith("http")) {
+            Toast.makeText(this, "当前不是网络流", Toast.LENGTH_SHORT).show()
             return
         }
-        val eligible = u.startsWith("http") && !u.contains("127.0.0.1")
-                && !u.contains(".m3u8") && !u.contains(".flv")
-        if (!eligible) {
-            Toast.makeText(this, "此链接不支持缓存(m3u8/本地代理流)", Toast.LENGTH_SHORT).show()
-            return
+        val ext = when {
+            u.contains(".m3u8") -> "ts"
+            u.contains(".flv") -> "flv"
+            else -> "mp4"
         }
-        val pos = mVideoView!!.currentPosition.toInt()
+        val dir = getExternalFilesDir(null)
+        val outFile = java.io.File(dir, "download_" + System.currentTimeMillis() + "." + ext)
+        capturing = true
         cacheOn = true
-        mVideoView!!.release()
-        mVideoView!!.skipPositionWhenPlay(pos)
-        mVideoView!!.setUrl(xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getProxy(this).getProxyUrl(u))
-        mVideoView!!.start()
-        Toast.makeText(this, "边播边缓存已开启，文件在下载页", Toast.LENGTH_SHORT).show()
+        val hdrs = headersFor(u)
+        captureThread = Thread {
+            try {
+                if (ext == "ts") captureM3u8(u, hdrs, outFile) else captureDirect(u, hdrs, outFile)
+            } catch (ignored: Throwable) {
+            }
+        }
+        captureThread!!.start()
+        Toast.makeText(this, "开始实时抓取: download_*.$ext（再点停止）", Toast.LENGTH_LONG).show()
+    }
+
+    /** 单文件流：直接边播边写盘 */
+    private fun captureDirect(u: String, hdrs: Map<String, String>?, out: java.io.File) {
+        val c = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+        c.connectTimeout = 8000; c.readTimeout = 15000
+        hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
+        val ins = c.inputStream
+        val os = java.io.FileOutputStream(out)
+        val buf = ByteArray(64 * 1024)
+        var n: Int
+        while (capturing && ins.read(buf).also { n = it } > 0) os.write(buf, 0, n)
+        os.close(); ins.close(); c.disconnect()
+    }
+
+    /** m3u8：逐片下载拼接成 ts；直播清单会循环刷新拿新分片 */
+    private fun captureM3u8(masterUrl: String, hdrs: Map<String, String>?, out: java.io.File) {
+        val os = java.io.FileOutputStream(out)
+        val buf = ByteArray(64 * 1024)
+        val done = HashSet<String>()
+        var mediaUrl: String? = null
+        var rounds = 0
+        while (capturing) {
+            val listUrl = mediaUrl ?: masterUrl
+            val body = httpGet(listUrl, hdrs) ?: break
+            if (mediaUrl == null && !body.contains("#EXTINF")) {
+                // 主清单：选 BANDWIDTH 最大的变体
+                var bestBw = -1L; var best: String? = null; var cur = -1L
+                val base = java.net.URI.create(masterUrl)
+                for (ln in body.split("\n")) {
+                    val t = ln.trim()
+                    if (t.startsWith("#EXT-X-STREAM-INF")) {
+                        val m = Regex("BANDWIDTH=(\\d+)").find(t)
+                        cur = m?.groupValues?.get(1)?.toLong() ?: -1
+                    } else if (t.isNotEmpty() && !t.startsWith("#") && cur > bestBw) {
+                        bestBw = cur; best = base.resolve(t).toString()
+                    }
+                }
+                mediaUrl = best ?: break
+                continue
+            }
+            // 媒体清单：顺序抓没下过的分片
+            val base = java.net.URI.create(listUrl)
+            var gotNew = false
+            for (ln in body.split("\n")) {
+                val t = ln.trim()
+                if (t.isEmpty() || t.startsWith("#")) continue
+                val seg = base.resolve(t).toString()
+                if (done.contains(seg)) continue
+                done.add(seg)
+                gotNew = true
+                val c = java.net.URL(seg).openConnection() as java.net.HttpURLConnection
+                c.connectTimeout = 8000; c.readTimeout = 15000
+                hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
+                val ins = c.inputStream
+                var n: Int
+                while (capturing && ins.read(buf).also { n = it } > 0) os.write(buf, 0, n)
+                ins.close(); c.disconnect()
+                if (!capturing) break
+            }
+            val isLive = body.contains("#EXT-X-MEDIA-SEQUENCE") && !body.contains("#EXT-X-ENDLIST")
+            if (!isLive && gotNew) break           // 点播抓完即止
+            if (!isLive && !gotNew) break
+            if (rounds++ > 7200) break             // 直播最多约2小时
+            Thread.sleep(2000)
+        }
+        os.close()
+        capturing = false
+    }
+
+    private fun httpGet(u: String, hdrs: Map<String, String>?): String? {
+        return try {
+            val c = java.net.URL(u).openConnection() as java.net.HttpURLConnection
+            c.connectTimeout = 8000; c.readTimeout = 8000
+            hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
+            if (c.responseCode != 200) { c.disconnect(); return null }
+            val ins = c.inputStream
+            val bo = java.io.ByteArrayOutputStream()
+            val b = ByteArray(8192); var n: Int
+            while (ins.read(b).also { n = it } > 0) bo.write(b, 0, n)
+            ins.close(); c.disconnect()
+            bo.toString("UTF-8")
+        } catch (e: Throwable) { null }
+    }
+
+    override fun onDestroy() {
+        capturing = false
+        super.onDestroy()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -168,7 +269,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             val gestureControlView = GestureView(this) //滑动控制视图
             controller.addControlComponent(gestureControlView)
             mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
-            mxPanel.onCacheClick = Runnable { cacheAndReplay() }
+            mxPanel.onCacheClick = Runnable { toggleCapture() }
             mxPanel.onProxyClick = Runnable { replayWithProxy() }
             controller.addControlComponent(mxPanel) //MX浮层:比例/倍速/截图/静音/旋转/缓存
             //根据是否为直播决定是否需要滑动调节进度
