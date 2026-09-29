@@ -6,7 +6,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,8 +14,8 @@ import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,20 +29,19 @@ import xyz.doikki.videocontroller.component.GestureView;
 import xyz.doikki.videoplayer.player.VideoView;
 
 /**
- * MX 风格播放器浮层：顶部半透明圆形按钮（默认一排5个，点击展开子选项），
- * 含 画面比例/镜像、播放速度、截图、静音、横竖屏旋转，并显示 video width/height。
+ * B站风格播放器浮层：右上角 ⁝ 按钮，点开右侧半透明功能面板
+ * （图标排/播放方式/画面尺寸/播放速度/工具），信息行显示 video width/height
  */
 public class MxPanelView extends GestureView {
 
     private static final int[] SCALES = {
             VideoView.SCREEN_SCALE_DEFAULT,
-            VideoView.SCREEN_SCALE_16_9,
-            VideoView.SCREEN_SCALE_4_3,
-            VideoView.SCREEN_SCALE_ORIGINAL,
             VideoView.SCREEN_SCALE_MATCH_PARENT,
-            VideoView.SCREEN_SCALE_CENTER_CROP};
+            VideoView.SCREEN_SCALE_CENTER_CROP,
+            VideoView.SCREEN_SCALE_16_9,
+            VideoView.SCREEN_SCALE_4_3};
     private static final String[] SCALE_NAMES =
-            {"默认", "16:9", "4:3", "原始", "填充", "裁剪"};
+            {"适应", "拉伸", "填充", "16:9", "4:3"};
     private static final float[] SPEEDS = {0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f};
     private static final String[] SPEED_NAMES =
             {"0.5X", "0.75X", "1X", "1.25X", "1.5X", "2X"};
@@ -51,14 +49,20 @@ public class MxPanelView extends GestureView {
     private ControlWrapper mWrapper;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private TextView tvInfo;
-    private LinearLayout rowSub;
-    private LinearLayout mPanel;
-    /** 边播边缓存/代理按钮回调，由播放页注入 */
+    private LinearLayout mMenu;
+    private TextView btnMore;
+    private int scaleIdx = 0, speedIdx = 2;
+    private boolean mirrored = false, muted = false, loopOn = false, tinyOn = false;
+
+    /** 由播放页注入：缓存实时抓流 / 代理兜底 / 循环（DK 无内置循环，播放页在完成事件里重播） */
     public Runnable onCacheClick;
     public Runnable onProxyClick;
-    private int scaleIdx = 0, speedIdx = 2;
-    private boolean mirrored = false, muted = false, landscape = false;
-    private int expanded = -1;
+    public interface MenuAction { void onLoop(boolean loopOn); }
+    public MenuAction menuAction;
+
+    private static final int PINK = 0xFFFF6699;
+    private static final int WHITE = 0xFFFFFFFF;
+    private static final int GRAY = 0xFFAAAAAA;
 
     public MxPanelView(Context context) {
         super(context);
@@ -70,70 +74,157 @@ public class MxPanelView extends GestureView {
         init();
     }
 
+    private TextView item(String text, int color, float size) {
+        TextView b = new TextView(getContext());
+        b.setText(text);
+        b.setTextColor(color);
+        b.setTextSize(size);
+        b.setGravity(Gravity.CENTER);
+        b.setPadding(dp(6), dp(10), dp(6), dp(10));
+        return b;
+    }
+
+    private TextView menuItem(final String text, final Runnable action) {
+        TextView b = item(text, WHITE, 14);
+        b.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { if (action != null) action.run(); }
+        });
+        return b;
+    }
+
+    private LinearLayout groupTitle(String text) {
+        LinearLayout g = new LinearLayout(getContext());
+        g.setOrientation(LinearLayout.HORIZONTAL);
+        TextView t = item(text, GRAY, 13);
+        g.addView(t);
+        return g;
+    }
+
+    /** 一行若干等宽选项，选中变粉 */
+    private LinearLayout optionRow(String[] names, final int checkedIdx, final OnPick pick) {
+        LinearLayout row = new LinearLayout(getContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < names.length; i++) {
+            final int idx = i;
+            TextView b = item(names[i], idx == checkedIdx ? PINK : WHITE, 14);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+            lp.rightMargin = dp(4);
+            b.setLayoutParams(lp);
+            b.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) { pick.onPick(idx); }
+            });
+            row.addView(b);
+        }
+        return row;
+    }
+
+    private interface OnPick { void onPick(int idx); }
+
     @SuppressLint("SetTextI18n")
     private void init() {
-        // 顶部信息 + 按钮排 + 子选项排
-        mPanel = new LinearLayout(getContext());
-        mPanel.setOrientation(LinearLayout.VERTICAL);
-        mPanel.setPadding(10, 6, 10, 6);
+        // ---- 右侧功能面板（默认隐藏） ----
+        mMenu = new LinearLayout(getContext());
+        mMenu.setOrientation(LinearLayout.VERTICAL);
+        mMenu.setBackgroundColor(0xD9101010);
+        mMenu.setPadding(dp(14), dp(10), dp(14), dp(14));
+
+        // 图标排（文字替代图标）
+        LinearLayout icons = new LinearLayout(getContext());
+        icons.setOrientation(LinearLayout.HORIZONTAL);
+        icons.addView(menuItem("后台播放", new Runnable() { public void run() {
+            Toast.makeText(getContext(), "后台播放暂未支持", Toast.LENGTH_SHORT).show(); }}));
+        icons.addView(menuItem(mirrored ? "镜像已开" : "镜像翻转", new Runnable() { public void run() {
+            mirrored = !mirrored;
+            mWrapper.setMirrorRotation(mirrored);
+        }}));
+        icons.addView(menuItem(tinyOn ? "退出小窗" : "小窗播放", new Runnable() { public void run() {
+            tinyOn = !tinyOn;
+            if (tinyOn) mWrapper.startTinyScreen(); else mWrapper.stopTinyScreen();
+        }}));
+        icons.addView(menuItem("定时关闭", new Runnable() { public void run() {
+            Toast.makeText(getContext(), "定时关闭暂未支持", Toast.LENGTH_SHORT).show(); }}));
+        mMenu.addView(icons);
+        mMenu.addView(sep());
+
+        // 播放方式
+        mMenu.addView(groupTitle("播放方式"));
+        mMenu.addView(optionRow(new String[]{"单集循环", "播完暂停"}, 1, new OnPick() {
+            public void onPick(int idx) {
+                loopOn = idx == 0;
+                if (menuAction != null) menuAction.onLoop(loopOn);
+                Toast.makeText(getContext(), loopOn ? "单集循环已开启" : "播完暂停", Toast.LENGTH_SHORT).show();
+            }
+        }));
+        mMenu.addView(sep());
+
+        // 画面尺寸
+        mMenu.addView(groupTitle("画面尺寸"));
+        mMenu.addView(optionRow(SCALE_NAMES, scaleIdx, new OnPick() {
+            public void onPick(int idx) {
+                scaleIdx = idx;
+                mWrapper.setScreenScaleType(SCALES[idx]);
+            }
+        }));
+        mMenu.addView(sep());
+
+        // 播放速度
+        mMenu.addView(groupTitle("播放速度"));
+        mMenu.addView(optionRow(SPEED_NAMES, speedIdx, new OnPick() {
+            public void onPick(int idx) {
+                speedIdx = idx;
+                mWrapper.setSpeed(SPEEDS[idx]);
+            }
+        }));
+        mMenu.addView(sep());
+
+        // 工具
+        mMenu.addView(groupTitle("工具"));
+        mMenu.addView(optionRow(new String[]{"缓存抓流", "代理兜底"}, -1, new OnPick() {
+            public void onPick(int idx) {
+                if (idx == 0 && onCacheClick != null) onCacheClick.run();
+                if (idx == 1 && onProxyClick != null) onProxyClick.run();
+            }
+        }));
+
+        ScrollView sv = new ScrollView(getContext());
+        sv.setVerticalScrollBarEnabled(false);
+        sv.addView(mMenu);
+        LayoutParams mlp = new LayoutParams(dp(300), LayoutParams.MATCH_PARENT, Gravity.END);
+        mMenu.setVisibility(GONE);
+        addView(sv, mlp);
+
+        // ---- 顶部：信息行 + 右上角 ⁝ ----
+        LinearLayout top = new LinearLayout(getContext());
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setPadding(dp(10), dp(6), dp(10), dp(6));
 
         tvInfo = new TextView(getContext());
-        tvInfo.setTextColor(0xFFFFFFFF);
+        tvInfo.setTextColor(WHITE);
         tvInfo.setTextSize(11);
         tvInfo.setShadowLayer(2, 1, 1, 0xFF000000);
         tvInfo.setText("video width:0 height:0");
-        mPanel.addView(tvInfo);
+        LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1);
+        tvInfo.setLayoutParams(ilp);
+        top.addView(tvInfo);
 
-        LinearLayout rowMain = new LinearLayout(getContext());
-        rowMain.setOrientation(LinearLayout.HORIZONTAL);
-        rowMain.setGravity(Gravity.CENTER_VERTICAL);
-        mPanel.addView(rowMain);
+        btnMore = new TextView(getContext());
+        btnMore.setText("⁝");
+        btnMore.setTextColor(WHITE);
+        btnMore.setTextSize(22);
+        btnMore.setGravity(Gravity.CENTER);
+        btnMore.setBackgroundResource(R.drawable.mx_circle);
+        btnMore.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                mMenu.setVisibility(mMenu.getVisibility() == VISIBLE ? GONE : VISIBLE);
+            }
+        });
+        top.addView(btnMore, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
-        String[] mains = {"比例", "倍速", "截图", "静音", "旋转"};
-        for (int i = 0; i < mains.length; i++) {
-            final int idx = i;
-            TextView b = circleBtn(mains[i]);
-            b.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    if (idx == 2) { doShot(); return; }   // 截图直接执行
-                    expanded = (expanded == idx) ? -1 : idx;
-                    showSub();
-                }
-            });
-            rowMain.addView(b);
-        }
-
-        // 第二排：缓存 / 代理（固定可见，不挤在滚动区里）
-        LinearLayout rowMain2 = new LinearLayout(getContext());
-        rowMain2.setOrientation(LinearLayout.HORIZONTAL);
-        rowMain2.setGravity(Gravity.CENTER_VERTICAL);
-        mPanel.addView(rowMain2);
-        String[] actions = {"缓存", "代理"};
-        for (int i = 0; i < actions.length; i++) {
-            final int idx = i;
-            TextView b = circleBtn(actions[i]);
-            b.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    if (idx == 0) { if (onCacheClick != null) onCacheClick.run(); return; }
-                    if (idx == 1) { if (onProxyClick != null) onProxyClick.run(); return; }
-                }
-            });
-            rowMain2.addView(b);
-        }
-
-        rowSub = new LinearLayout(getContext());
-        rowSub.setOrientation(LinearLayout.HORIZONTAL);
-        rowSub.setGravity(Gravity.CENTER_VERTICAL);
-        rowSub.setVisibility(GONE);
-        mPanel.addView(rowSub);
-
-        HorizontalScrollView hs = new HorizontalScrollView(getContext());
-        hs.setHorizontalScrollBarEnabled(false);
-        hs.addView(mPanel);
-        addView(hs, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP));
+        addView(top, new LayoutParams(LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT, Gravity.TOP));
 
         // 轮询刷新视频宽高
         Runnable tick = new Runnable() {
@@ -148,123 +239,14 @@ public class MxPanelView extends GestureView {
         mHandler.postDelayed(tick, 500);
     }
 
-    private TextView circleBtn(String text) {
-        TextView b = new TextView(getContext());
-        b.setText(text);
-        b.setTextColor(0xFFFFFFFF);
-        b.setTextSize(12);
-        b.setGravity(Gravity.CENTER);
-        b.setBackgroundResource(R.drawable.mx_circle);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(46), dp(46));
-        lp.rightMargin = dp(10);
-        lp.topMargin = dp(4);
-        b.setLayoutParams(lp);
-        return b;
-    }
-
-    private TextView chip(String text) {
-        TextView b = new TextView(getContext());
-        b.setText(text);
-        b.setTextColor(0xFFFFFFFF);
-        b.setTextSize(12);
-        b.setGravity(Gravity.CENTER);
-        b.setBackgroundResource(R.drawable.mx_circle);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(52), dp(36));
-        lp.rightMargin = dp(6);
-        lp.topMargin = dp(6);
-        b.setLayoutParams(lp);
-        return b;
-    }
-
-    @SuppressLint("SetTextI18n")
-    private void showSub() {
-        rowSub.removeAllViews();
-        if (expanded < 0) {
-            rowSub.setVisibility(GONE);
-            return;
-        }
-        rowSub.setVisibility(VISIBLE);
-        if (expanded == 0) {                       // 比例 + 镜像
-            for (int i = 0; i < SCALES.length; i++) {
-                final int i2 = i;
-                TextView c = chip(SCALE_NAMES[i]);
-                c.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        scaleIdx = i2;
-                        mWrapper.setScreenScaleType(SCALES[i2]);
-                        collapse();
-                    }
-                });
-                rowSub.addView(c);
-            }
-            TextView mir = chip(mirrored ? "镜像开" : "镜像关");
-            mir.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    mirrored = !mirrored;
-                    mWrapper.setMirrorRotation(mirrored);
-                    collapse();
-                }
-            });
-            rowSub.addView(mir);
-        } else if (expanded == 1) {                // 倍速
-            for (int i = 0; i < SPEEDS.length; i++) {
-                final int i2 = i;
-                TextView c = chip(SPEED_NAMES[i]);
-                c.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v) {
-                        speedIdx = i2;
-                        mWrapper.setSpeed(SPEEDS[i2]);
-                        collapse();
-                    }
-                });
-                rowSub.addView(c);
-            }
-        } else if (expanded == 3) {                // 静音
-            TextView on = chip("静音开");
-            on.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    muted = true;
-                    mWrapper.setMute(true);
-                    collapse();
-                }
-            });
-            rowSub.addView(on);
-            TextView off = chip("静音关");
-            off.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    muted = false;
-                    mWrapper.setMute(false);
-                    collapse();
-                }
-            });
-            rowSub.addView(off);
-        } else if (expanded == 4) {                // 旋转
-            TextView land = chip("横屏");
-            land.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    landscape = true;
-                    ((Activity) getContext()).setRequestedOrientation(
-                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                    collapse();
-                }
-            });
-            rowSub.addView(land);
-            TextView port = chip("竖屏");
-            port.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    landscape = false;
-                    ((Activity) getContext()).setRequestedOrientation(
-                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
-                    collapse();
-                }
-            });
-            rowSub.addView(port);
-        }
-    }
-
-    private void collapse() {
-        expanded = -1;
-        showSub();
+    private View sep() {
+        View v = new View(getContext());
+        v.setBackgroundColor(0x33FFFFFF);
+        v.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(1)));
+        ((LinearLayout.LayoutParams) v.getLayoutParams()).topMargin = dp(10);
+        ((LinearLayout.LayoutParams) v.getLayoutParams()).bottomMargin = dp(10);
+        return v;
     }
 
     private void doShot() {
@@ -275,7 +257,7 @@ public class MxPanelView extends GestureView {
                 return;
             }
             String name = "dkplayer_" + System.currentTimeMillis() + ".png";
-            if (Build.VERSION.SDK_INT >= 29) {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
                 ContentValues cv = new ContentValues();
                 cv.put(MediaStore.Images.Media.DISPLAY_NAME, name);
                 cv.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
@@ -311,8 +293,15 @@ public class MxPanelView extends GestureView {
 
     @Override
     public void onVisibilityChanged(boolean isVisible, android.view.animation.Animation anim) {
-        // 信息行与圆钮跟随控制层一起显示/隐藏（点屏幕出现，超时或再点隐藏）
-        if (mPanel != null) mPanel.setVisibility(isVisible ? VISIBLE : GONE);
+        // 信息行与 ⁝ 跟随控制层显示/隐藏；打开的面板一并收起
+        if (isVisible) {
+            btnMore.setVisibility(VISIBLE);
+            tvInfo.setVisibility(VISIBLE);
+        } else {
+            btnMore.setVisibility(GONE);
+            tvInfo.setVisibility(GONE);
+            mMenu.setVisibility(GONE);
+        }
     }
 
     @Override

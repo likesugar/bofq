@@ -38,6 +38,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
     private var rawUrl: String? = null
     private var cacheOn = false
     private var proxyOn = false
+    private var loopOn = false
     private lateinit var mxPanel: xyz.doikki.dkplayer.widget.component.MxPanelView
 
     /** 防盗链请求头：B站/抖音直连播放用 */
@@ -271,6 +272,9 @@ class PlayerActivity : BaseActivity<VideoView>() {
             mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
             mxPanel.onCacheClick = Runnable { toggleCapture() }
             mxPanel.onProxyClick = Runnable { replayWithProxy() }
+            mxPanel.menuAction = object : xyz.doikki.dkplayer.widget.component.MxPanelView.MenuAction {
+                override fun onLoop(loop: Boolean) { loopOn = loop }
+            }
             controller.addControlComponent(mxPanel) //MX浮层:比例/倍速/截图/静音/旋转/缓存
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
@@ -388,6 +392,8 @@ class PlayerActivity : BaseActivity<VideoView>() {
                     VideoView.STATE_BUFFERED -> {
                     }
                     VideoView.STATE_PLAYBACK_COMPLETED -> {
+                        // 单集循环：播完自动重播
+                        if (loopOn) mVideoView!!.replay(true)
                     }
                     VideoView.STATE_ERROR -> {
                     }
