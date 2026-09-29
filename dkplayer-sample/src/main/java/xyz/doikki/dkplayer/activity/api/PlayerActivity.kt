@@ -12,7 +12,6 @@ import xyz.doikki.dkplayer.R
 import xyz.doikki.dkplayer.activity.BaseActivity
 import xyz.doikki.dkplayer.util.IntentKeys
 import xyz.doikki.dkplayer.util.Utils
-import xyz.doikki.dkplayer.widget.component.DebugInfoView
 import xyz.doikki.dkplayer.widget.component.PlayerMonitor
 import xyz.doikki.dkplayer.widget.render.gl2.GLSurfaceRenderView2
 import xyz.doikki.dkplayer.widget.render.gl2.filter.GlFilterGroup
@@ -94,7 +93,6 @@ class PlayerActivity : BaseActivity<VideoView>() {
 //            controller.setDoubleTapTogglePlayEnabled(false)
 
             //在控制器上显示调试信息
-            controller.addControlComponent(DebugInfoView(this))
             //在LogCat显示调试信息
             controller.addControlComponent(PlayerMonitor())
 
@@ -148,14 +146,6 @@ class PlayerActivity : BaseActivity<VideoView>() {
 //            mVideoView.skipPositionWhenPlay(10000)
             mVideoView.start()
         }
-
-        //播放其他视频
-        val etOtherVideo = findViewById<EditText>(R.id.et_other_video)
-        findViewById<View>(R.id.btn_start_play).setOnClickListener {
-            mVideoView.release()
-            mVideoView.setUrl(etOtherVideo.text.toString())
-            mVideoView.start()
-        }
     }
 
     private val mOnStateChangeListener: BaseVideoView.OnStateChangeListener =
@@ -198,29 +188,6 @@ class PlayerActivity : BaseActivity<VideoView>() {
         }
     private var i = 0
     fun onButtonClick(view: View) {
-        when (view.id) {
-            R.id.scale_default -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_DEFAULT)
-            R.id.scale_169 -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_16_9)
-            R.id.scale_43 -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_4_3)
-            R.id.scale_original -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_ORIGINAL)
-            R.id.scale_match_parent -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_MATCH_PARENT)
-            R.id.scale_center_crop -> mVideoView!!.setScreenScaleType(VideoView.SCREEN_SCALE_CENTER_CROP)
-            R.id.speed_0_5 -> mVideoView!!.speed = 0.5f
-            R.id.speed_0_75 -> mVideoView!!.speed = 0.75f
-            R.id.speed_1_0 -> mVideoView!!.speed = 1.0f
-            R.id.speed_1_5 -> mVideoView!!.speed = 1.5f
-            R.id.speed_2_0 -> mVideoView!!.speed = 2.0f
-            R.id.screen_shot -> {
-                val imageView = findViewById<ImageView>(R.id.iv_screen_shot)
-                val bitmap = mVideoView!!.doScreenShot()
-                imageView.setImageBitmap(bitmap)
-            }
-            R.id.mirror_rotate -> {
-                mVideoView!!.setMirrorRotation(i % 2 == 0)
-                i++
-            }
-            R.id.btn_mute -> mVideoView!!.isMute = !mVideoView!!.isMute
-        }
     }
 
     override fun onPause() {

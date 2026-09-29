@@ -52,6 +52,7 @@ public class MxPanelView extends GestureView {
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private TextView tvInfo;
     private LinearLayout rowSub;
+    private LinearLayout mPanel;
     private int scaleIdx = 0, speedIdx = 2;
     private boolean mirrored = false, muted = false, landscape = false;
     private int expanded = -1;
@@ -69,21 +70,21 @@ public class MxPanelView extends GestureView {
     @SuppressLint("SetTextI18n")
     private void init() {
         // 顶部信息 + 按钮排 + 子选项排
-        LinearLayout panel = new LinearLayout(getContext());
-        panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setPadding(10, 6, 10, 6);
+        mPanel = new LinearLayout(getContext());
+        mPanel.setOrientation(LinearLayout.VERTICAL);
+        mPanel.setPadding(10, 6, 10, 6);
 
         tvInfo = new TextView(getContext());
         tvInfo.setTextColor(0xFFFFFFFF);
         tvInfo.setTextSize(11);
         tvInfo.setShadowLayer(2, 1, 1, 0xFF000000);
         tvInfo.setText("video width:0 height:0");
-        panel.addView(tvInfo);
+        mPanel.addView(tvInfo);
 
         LinearLayout rowMain = new LinearLayout(getContext());
         rowMain.setOrientation(LinearLayout.HORIZONTAL);
         rowMain.setGravity(Gravity.CENTER_VERTICAL);
-        panel.addView(rowMain);
+        mPanel.addView(rowMain);
 
         String[] mains = {"比例", "倍速", "截图", "静音", "旋转"};
         for (int i = 0; i < mains.length; i++) {
@@ -103,11 +104,11 @@ public class MxPanelView extends GestureView {
         rowSub.setOrientation(LinearLayout.HORIZONTAL);
         rowSub.setGravity(Gravity.CENTER_VERTICAL);
         rowSub.setVisibility(GONE);
-        panel.addView(rowSub);
+        mPanel.addView(rowSub);
 
         HorizontalScrollView hs = new HorizontalScrollView(getContext());
         hs.setHorizontalScrollBarEnabled(false);
-        hs.addView(panel);
+        hs.addView(mPanel);
         addView(hs, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -285,6 +286,12 @@ public class MxPanelView extends GestureView {
     public void attach(ControlWrapper wrapper) {
         super.attach(wrapper);
         mWrapper = wrapper;
+    }
+
+    @Override
+    public void onVisibilityChanged(boolean isVisible, android.view.animation.Animation anim) {
+        // 信息行与圆钮跟随控制层一起显示/隐藏（点屏幕出现，超时或再点隐藏）
+        if (mPanel != null) mPanel.setVisibility(isVisible ? VISIBLE : GONE);
     }
 
     @Override

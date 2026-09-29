@@ -177,3 +177,13 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :dkplayer-sample:processReleaseJavaRes UP-TO-DATE
 > Task :dkplayer-sample:mergeReleaseJavaResource UP-TO-DATE
 > Task :dkplayer-sample:minifyReleaseWithR8
+> Task :dkplayer-sample:compileReleaseArtProfile
+> Task :dkplayer-sample:convertShrunkResourcesToBinaryRelease
+> Task :dkplayer-sample:optimizeReleaseResources
+> Task :dkplayer-sample:packageRelease
+> Task :dkplayer-sample:createReleaseApkListingFileRedirect UP-TO-DATE
+> Task :dkplayer-sample:assembleRelease
+[Incubating] Problems report is available at: file:///home/z/my-project/DKVideoPlayer/build/reports/problems/problems-report.html
+
+BUILD SUCCESSFUL in 2m 32s
+141 actionable tasks: 9 executed, 132 up-to-date
