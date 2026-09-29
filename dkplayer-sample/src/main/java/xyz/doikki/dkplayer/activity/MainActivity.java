@@ -190,13 +190,15 @@ public class MainActivity extends Activity {
             ensureBgWeb(true);   // B站解析过程可见
             resolveBiliViaPeanut(url);
         } else if (url.contains("live.douyin.com")) {
-            // 抖音直播：douyin-live-extractor 方案(抓页面+pace_f JSON+清晰度提取)
-            ensureBgWeb();
-            douyinLiveExtract(url);
+            // 抖音直播：大屏浏览页打开(可见,自带过风控种Cookie)，抓到流自动播
+            synchronized (douyinCands) { douyinCands.clear(); }
+            douyinPickScheduled = false;
+            ensureBgWeb(true);
+            bgWeb.loadUrl(url);
         } else {
             synchronized (douyinCands) { douyinCands.clear(); }
             douyinPickScheduled = false;
-            ensureBgWeb();
+            ensureBgWeb(true);   // 大屏浏览页（照抖音直播解析源码：可见WebView+嗅探）
             bgWeb.loadUrl(url);
         }
     }
@@ -214,10 +216,18 @@ public class MainActivity extends Activity {
         if (!parsing) return;
         parsing = false;
         ((TextView) findViewById(R.id.btn_parse)).setText("解析");
-        // 收起解析网页（B站 hellotik 过程页）
+        // 收起解析网页（B站 hellotik 过程页 / 抖音大屏浏览页）
         if (bgWeb != null) {
             main.post(new Runnable() { public void run() {
-                try { bgWeb.stopLoading(); bgWeb.setVisibility(View.GONE); } catch (Throwable ignored) {}
+                try {
+                    bgWeb.stopLoading();
+                    bgWeb.setVisibility(View.GONE);
+                    android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
+                    for (int i = content.getChildCount() - 1; i >= 0; i--) {
+                        View cv = content.getChildAt(i);
+                        if ("parse_close".equals(cv.getTag())) content.removeView(cv);
+                    }
+                } catch (Throwable ignored) {}
             }});
         }
     }
@@ -304,6 +314,16 @@ public class MainActivity extends Activity {
                         public void run() { hellotikSubmit(0); }
                     }, 500);
                 }
+                // 抖音直播：页面种好真Cookie后，用 extractor 方案兜底解析
+                if (url != null && url.contains("live.douyin.com") && parsing) {
+                    view.postDelayed(new Runnable() {
+                        public void run() {
+                            if (!douyinCands.isEmpty() || douyinPickScheduled) return;
+                            String ck = CookieManager.getInstance().getCookie("https://live.douyin.com");
+                            douyinLiveExtract(url, ck);
+                        }
+                    }, 3000);
+                }
             }
 
             @Override
@@ -345,7 +365,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** 把解析网页全屏挂到窗口最上层并可见 */
+    /** 把解析网页全屏挂到窗口最上层并可见，右上角 ✕ 可手动收起 */
     private void showParseWeb() {
         android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
         if (bgWeb.getParent() == null) {
@@ -355,6 +375,25 @@ public class MainActivity extends Activity {
         }
         bgWeb.setVisibility(View.VISIBLE);
         bgWeb.bringToFront();
+        // ✕ 关闭按钮（浏览页手动收起）
+        android.widget.TextView close = new android.widget.TextView(this);
+        close.setText("✕");
+        close.setTextColor(0xFFFFFFFF);
+        close.setTextSize(16);
+        close.setGravity(Gravity.CENTER);
+        close.setBackgroundResource(R.drawable.mx_circle);
+        android.widget.FrameLayout.LayoutParams clp = new android.widget.FrameLayout.LayoutParams(dp(36), dp(36));
+        clp.gravity = Gravity.TOP | Gravity.END;
+        clp.setMargins(0, dp(12), dp(12), 0);
+        close.setLayoutParams(clp);
+        close.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                stopParse();
+            }
+        });
+        content.addView(close);
+        close.bringToFront();
+        close.setTag("parse_close");
     }
 
     /** HLS 主清单择优：抓 BANDWIDTH 最大的变体流进记录（自小工具 DouyinActivity 移植） */
@@ -602,7 +641,9 @@ public class MainActivity extends Activity {
     private static final String DY_LIVE_COOKIE =
         "enter_pc_once=1; hevc_supported=true; ttwid=1%7COnZEYGAxHABx6WRfArV8V0vfh1qUfP8AU2WYpG2ybdU%7C1754493043%7C867b28541b24aca9aec6379357aa2bff731e159fa7a804a767f575c8ff886639; __ac_nonce=06893707d00e64c4488d5; __ac_signature=_02B4Z6wo00f01m0zFcQAAIDDRDeLuhFSmo5tExFAAPPu88; odin_tt=e0bcb4ad345d3ed6915b71cab9469cb459681b743f65d870cb52329adfa8792b80633cf01c31edd9cf4874b743daacc7b789efd1727202b7ed3f6e7059ce43a72f3358995fc8367000f0b42103a78d1b; passport_csrf_token=4d713363889176dba46a4d28394acf2f";
 
-    private void douyinLiveExtract(final String liveUrl) {
+    private void douyinLiveExtract(final String liveUrl) { douyinLiveExtract(liveUrl, null); }
+
+    private void douyinLiveExtract(final String liveUrl, final String cookie) {
         new Thread(new Runnable() { public void run() {
             try {
                 HttpURLConnection c = (HttpURLConnection) new java.net.URL(liveUrl).openConnection();
@@ -611,7 +652,7 @@ public class MainActivity extends Activity {
                 c.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36");
                 c.setRequestProperty("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
                 c.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9");
-                c.setRequestProperty("Cookie", DY_LIVE_COOKIE);
+                c.setRequestProperty("Cookie", cookie != null && cookie.length() > 10 ? cookie : DY_LIVE_COOKIE);
                 if (c.getResponseCode() != 200) { c.disconnect(); failDouyin("页面请求失败:" + c.getResponseCode()); return; }
                 java.io.InputStream ins = c.getInputStream();
                 java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
