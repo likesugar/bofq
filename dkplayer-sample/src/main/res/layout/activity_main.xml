@@ -4,6 +4,13 @@
     android:layout_height="match_parent"
     android:background="#ffffff">
 
+    <!-- 浏览页容器：照源码，WebView 常驻显示输入框地址，不被收起 -->
+    <FrameLayout
+        android:id="@+id/web_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"/>
+
     <!-- 顶部操作栏：输入框 + 解析 + 切电脑UA + 记录 -->
     <LinearLayout
         android:id="@+id/top_bar"

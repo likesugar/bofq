@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** 单独播放器：剪贴板有链接直接播，否则提示 */
+    /** 单独播放器：剪贴板有链接直接播；没有也直接进（页面上用其他地址开始播放） */
     private void openStandalonePlayer() {
         String url = null;
         try {
@@ -146,10 +146,7 @@ public class MainActivity extends Activity {
                 if (t != null && t.toString().trim().startsWith("http")) url = t.toString().trim();
             }
         } catch (Throwable ignored) {}
-        if (url == null) {
-            Toast.makeText(this, "剪贴板没有链接", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        // 无链接也进播放器：页面下方「其他地址+开始播放」可直接用
         PlayerActivity.start(this, url, "播放器", false, false);
     }
 
@@ -216,20 +213,7 @@ public class MainActivity extends Activity {
         if (!parsing) return;
         parsing = false;
         ((TextView) findViewById(R.id.btn_parse)).setText("解析");
-        // 收起解析网页（B站 hellotik 过程页 / 抖音大屏浏览页）
-        if (bgWeb != null) {
-            main.post(new Runnable() { public void run() {
-                try {
-                    bgWeb.stopLoading();
-                    bgWeb.setVisibility(View.GONE);
-                    android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
-                    for (int i = content.getChildCount() - 1; i >= 0; i--) {
-                        View cv = content.getChildAt(i);
-                        if ("parse_close".equals(cv.getTag())) content.removeView(cv);
-                    }
-                } catch (Throwable ignored) {}
-            }});
-        }
+        // 浏览页常驻不收起（照源码）
     }
 
     private String normInput(String raw) {
@@ -369,35 +353,17 @@ public class MainActivity extends Activity {
         return (int) (v * getResources().getDisplayMetrics().density + 0.5f);
     }
 
-    /** 把解析网页全屏挂到窗口最上层并可见，右上角 ✕ 可手动收起 */
+    /** 把浏览页嵌入主页容器常驻显示（不收起，照源码） */
     private void showParseWeb() {
-        android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
-        if (bgWeb.getParent() == null) {
-            content.addView(bgWeb, new android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        android.view.ViewGroup container = (android.view.ViewGroup) findViewById(R.id.web_container);
+        if (bgWeb.getParent() == container) return;
+        if (bgWeb.getParent() instanceof android.view.ViewGroup) {
+            ((android.view.ViewGroup) bgWeb.getParent()).removeView(bgWeb);
         }
+        container.addView(bgWeb, new android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT));
         bgWeb.setVisibility(View.VISIBLE);
-        bgWeb.bringToFront();
-        // ✕ 关闭按钮（浏览页手动收起）
-        android.widget.TextView close = new android.widget.TextView(this);
-        close.setText("✕");
-        close.setTextColor(0xFFFFFFFF);
-        close.setTextSize(16);
-        close.setGravity(Gravity.CENTER);
-        close.setBackgroundResource(R.drawable.mx_circle);
-        android.widget.FrameLayout.LayoutParams clp = new android.widget.FrameLayout.LayoutParams(dp(36), dp(36));
-        clp.gravity = Gravity.TOP | Gravity.END;
-        clp.setMargins(0, dp(12), dp(12), 0);
-        close.setLayoutParams(clp);
-        close.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                stopParse();
-            }
-        });
-        content.addView(close);
-        close.bringToFront();
-        close.setTag("parse_close");
     }
 
     /** HLS 主清单择优：抓 BANDWIDTH 最大的变体流进记录（自小工具 DouyinActivity 移植） */

@@ -382,7 +382,24 @@ class PlayerActivity : BaseActivity<VideoView>() {
 
             //从设置的position开始播放
 //            mVideoView.skipPositionWhenPlay(10000)
-            mVideoView.start()
+            if (url != null) mVideoView.start()
+        }
+
+        // 第四版按键：其他地址 + 开始播放（播放器下方，与控制层并存）
+        val etOther = findViewById<EditText>(R.id.et_other_video)
+        findViewById<View>(R.id.btn_start_play).setOnClickListener {
+            val u = etOther.text.toString().trim()
+            if (u.isEmpty()) return@setOnClickListener
+            rawUrl = u
+            cacheOn = false
+            proxyOn = false
+            mVideoView!!.release()
+            mVideoView!!.setUrl(u, headersFor(u))
+            requestedOrientation = if (u.contains("douyin") || u.contains("aweme"))
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            else
+                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            mVideoView!!.start()
         }
     }
 

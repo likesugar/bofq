@@ -59,6 +59,9 @@ public class MxPanelView extends GestureView {
     public Runnable onProxyClick;
     public interface MenuAction { void onLoop(boolean loopOn); }
     public MenuAction menuAction;
+    /** 第四版「其他地址→开始播放」，与控制层合并 */
+    public interface UrlAction { void onPlay(String url); }
+    public UrlAction urlAction;
 
     private static final int PINK = 0xFFFF6699;
     private static final int WHITE = 0xFFFFFFFF;
