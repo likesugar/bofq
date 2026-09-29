@@ -182,7 +182,7 @@ public class MainActivity extends Activity {
 
         if (isStreamUrl(url)) { addRecord("直播流", url); parseDone(); return; }
 
-        if (url.contains("bilibili.com")) {
+        if (url.contains("bilibili.com") || url.contains("b23.tv")) {
             resolveBiliViaPeanut(url);
         } else {
             ensureBgWeb();
@@ -356,7 +356,12 @@ public class MainActivity extends Activity {
         if (pendingBili == null || bgWeb == null) return;
         final String bili = pendingBili.replace("'", "");
         String js = "(function(){"
-            + "var inp=document.querySelector('input[type=url]')||document.querySelector('input');"
+            + "var inp=null,all=document.querySelectorAll('input[type=text],input[type=url],input');"
+            + "for(var i=0;i<all.length;i++){"
+            + "var p=(all[i].getAttribute('placeholder')||'');"
+            + "if(p.indexOf('请粘贴视频链接')>=0){inp=all[i];break;}"
+            + "}"
+            + "if(!inp){inp=document.querySelector('input[type=url]')||document.querySelector('input');}"
             + "if(!inp){return 'noinp';}"
             + "var d=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');"
             + "d.set.call(inp,'" + bili + "');"
@@ -372,7 +377,7 @@ public class MainActivity extends Activity {
         bgWeb.evaluateJavascript(js, new android.webkit.ValueCallback<String>() {
             public void onReceiveValue(String v) {
                 if (v != null && v.contains("ok")) {
-                    main.postDelayed(new Runnable() { public void run() { hellotikCopy(0); } }, 3000);
+                    main.postDelayed(new Runnable() { public void run() { hellotikReadVideo(0); } }, 3000);
                 } else if (round < 8) {
                     main.postDelayed(new Runnable() { public void run() { hellotikSubmit(round + 1); } }, 1500);
                 } else {
@@ -383,57 +388,47 @@ public class MainActivity extends Activity {
         });
     }
 
-    /** hellotik 流程②：点「复制链接」然后读剪贴板 */
-    private void hellotikCopy(final int round) {
+    /** hellotik 流程②：轮询读取结果区 <video src="..."> 的直链 */
+    private void hellotikReadVideo(final int round) {
         if (pendingBili == null || bgWeb == null) return;
         String js = "(function(){"
-            + "var bs=document.getElementsByTagName('button');"
-            + "for(var i=0;i<bs.length;i++){"
-            + "if(bs[i].textContent.indexOf('复制链接')>=0){bs[i].click();return 'ok';}"
+            + "var vs=document.querySelectorAll('video');"
+            + "for(var i=0;i<vs.length;i++){"
+            + "var s=vs[i].getAttribute('src')||'';"
+            + "if(s.indexOf('http')==0&&s.length>30){return s;}"
             + "}"
-            + "return 'nocopy';"
+            + "return '';"
             + "})()";
         bgWeb.evaluateJavascript(js, new android.webkit.ValueCallback<String>() {
             public void onReceiveValue(String v) {
-                if (v != null && v.contains("ok")) {
-                    main.postDelayed(new Runnable() { public void run() { readHellotikClip(0); } }, 800);
-                } else if (round < 12) {
-                    main.postDelayed(new Runnable() { public void run() { hellotikCopy(round + 1); } }, 2000);
+                String url = null;
+                if (v != null && v.length() > 4) {
+                    url = v.trim();
+                    if (url.startsWith("\"") && url.endsWith("\"")) {
+                        url = url.substring(1, url.length() - 1);
+                    }
+                    url = url.replace("\\u0026", "&").replace("\\/", "/").replace("&amp;", "&");
+                    if (url.equals("''") || url.equals("\"\"")) url = null;
+                }
+                String l = url == null ? "" : url.toLowerCase();
+                boolean hit = l.startsWith("http")
+                    && (l.contains("bilivideo") || l.contains("upos-") || l.contains(".m4s")
+                        || l.contains(".mp4") || l.contains(".m3u8") || l.contains(".flv"));
+                if (hit) {
+                    parseDone();
+                    main.post(new Runnable() {
+                        public void run() { if (bgWeb != null) bgWeb.stopLoading(); }
+                    });
+                    final String f = url;
+                    main.post(new Runnable() { public void run() { addRecord("B站", f); } });
+                } else if (round < 15 && parsing) {
+                    main.postDelayed(new Runnable() { public void run() { hellotikReadVideo(round + 1); } }, 2000);
                 } else {
-                    main.post(new Runnable() { public void run() { addRecord("B站", "hellotik未出链接"); } });
+                    main.post(new Runnable() { public void run() { addRecord("B站", "hellotik未取到视频直链"); } });
                     parseDone();
                 }
             }
         });
-    }
-
-    /** hellotik 流程③：读剪贴板校验流地址 */
-    private void readHellotikClip(final int round) {
-        ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-        String clip = null;
-        try {
-            if (cm != null && cm.hasPrimaryClip() && cm.getPrimaryClip().getItemCount() > 0) {
-                CharSequence cs = cm.getPrimaryClip().getItemAt(0).coerceToText(this);
-                if (cs != null) clip = cs.toString().trim();
-            }
-        } catch (Throwable ignored) {}
-        String l = clip == null ? "" : clip.toLowerCase();
-        boolean hit = l.startsWith("http")
-            && (l.contains("bilivideo") || l.contains("upos-") || l.contains(".m4s")
-                || l.contains(".mp4") || l.contains(".m3u8") || l.contains(".flv"));
-        if (hit) {
-            parseDone();
-            main.post(new Runnable() {
-                public void run() { if (bgWeb != null) bgWeb.stopLoading(); }
-            });
-            final String f = clip;
-            main.post(new Runnable() { public void run() { addRecord("B站", f); } });
-        } else if (round < 8 && parsing) {
-            main.postDelayed(new Runnable() { public void run() { readHellotikClip(round + 1); } }, 1500);
-        } else {
-            main.post(new Runnable() { public void run() { addRecord("B站", "hellotik未取到流地址"); } });
-            parseDone();
-        }
     }
 
     private void injectPeanutFill() {
