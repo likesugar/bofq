@@ -20,6 +20,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.HttpURLConnection;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
