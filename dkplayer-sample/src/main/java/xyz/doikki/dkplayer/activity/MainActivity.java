@@ -185,6 +185,7 @@ public class MainActivity extends Activity {
         if (isStreamUrl(url)) { addRecord("直播流", url); parseDone(); return; }
 
         if (url.contains("bilibili.com") || url.contains("b23.tv")) {
+            ensureBgWeb(true);   // B站解析过程可见
             resolveBiliViaPeanut(url);
         } else {
             synchronized (douyinCands) { douyinCands.clear(); }
@@ -207,6 +208,12 @@ public class MainActivity extends Activity {
         if (!parsing) return;
         parsing = false;
         ((TextView) findViewById(R.id.btn_parse)).setText("解析");
+        // 收起解析网页（B站 hellotik 过程页）
+        if (bgWeb != null) {
+            main.post(new Runnable() { public void run() {
+                try { bgWeb.stopLoading(); bgWeb.setVisibility(View.GONE); } catch (Throwable ignored) {}
+            }});
+        }
     }
 
     private String normInput(String raw) {
@@ -249,7 +256,16 @@ public class MainActivity extends Activity {
 
     @SuppressLint("SetJavaScriptEnabled")
     private void ensureBgWeb() {
-        if (bgWeb != null) return;
+        ensureBgWeb(false);
+    }
+
+    /** visible=true 时全屏展示解析网页（B站 hellotik 过程可见） */
+    @SuppressLint("SetJavaScriptEnabled")
+    private void ensureBgWeb(boolean fullscreen) {
+        if (bgWeb != null) {
+            if (fullscreen) showParseWeb(); else bgWeb.setVisibility(View.GONE);
+            return;
+        }
         bgWeb = new WebView(this);
         WebSettings s = bgWeb.getSettings();
         s.setJavaScriptEnabled(true);
@@ -298,7 +314,8 @@ public class MainActivity extends Activity {
                     // 抖音强制最高画质：ratio→1080p；biz_resolution→1088x1920（兼容 %3D 编码）
                     String hi = url
                         .replaceAll("ratio=[a-zA-Z0-9_]+", "ratio=1080p")
-                        .replaceAll("biz_resolution(=|%3D|%3d)[a-zA-Z0-9_x]+", "biz_resolution$11088x1920");
+                        .replaceAll("biz_resolution(=|%3D|%3d)[a-zA-Z0-9_x]+", "biz_resolution$11088x1920")
+                        .replaceAll("(?<!biz_)resolution(=|%3D|%3d)[a-zA-Z0-9_x]+", "resolution$11088x1920");
                     final String f = hi;
                     synchronized (douyinCands) {
                         if (!douyinCands.contains(f)) douyinCands.add(f);
@@ -315,7 +332,23 @@ public class MainActivity extends Activity {
             }
         });
         android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
-        content.addView(bgWeb, new android.view.ViewGroup.LayoutParams(1, 1));
+        if (fullscreen) {
+            showParseWeb();
+        } else {
+            content.addView(bgWeb, new android.view.ViewGroup.LayoutParams(1, 1));
+        }
+    }
+
+    /** 把解析网页全屏挂到窗口最上层并可见 */
+    private void showParseWeb() {
+        android.view.ViewGroup content = (android.view.ViewGroup) findViewById(android.R.id.content);
+        if (bgWeb.getParent() == null) {
+            content.addView(bgWeb, new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        }
+        bgWeb.setVisibility(View.VISIBLE);
+        bgWeb.bringToFront();
     }
 
     /** HLS 主清单择优：抓 BANDWIDTH 最大的变体流进记录（自小工具 DouyinActivity 移植） */
@@ -665,6 +698,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                 cm.setPrimaryClip(android.content.ClipData.newPlainText("流地址", streamUrl));
+                Toast.makeText(MainActivity.this, "已复制链接", Toast.LENGTH_SHORT).show();
             }
         });
         row.addView(tvUrl2);
