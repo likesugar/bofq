@@ -1,0 +1,25 @@
+apply plugin: 'com.android.library'
+apply from: '../constants.gradle'
+
+android {
+    namespace 'xyz.doikki.videocontroller'
+    compileSdk project.ext.compileSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdk project.ext.minSdkVersion
+        targetSdk project.ext.targetSdkVersion
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    compileOnly project.ext.annotation
+    api project(':dkplayer-java')
+}
+
+ext {
+    PUBLISH_ARTIFACT_ID = 'dkplayer-ui'
+}
+
+

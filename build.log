@@ -1,0 +1,219 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+WARNING: The specified Android SDK Build Tools version (34.0.0) is ignored, as it is below the minimum supported version (35.0.0) for Android Gradle Plugin 8.9.1.
+Android SDK Build Tools 35.0.0 will be used.
+To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gradle file, as each version of the Android Gradle Plugin now has a default version of the build tools.
+> Task :dkplayer-java:preBuild UP-TO-DATE
+> Task :dkplayer-java:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-java:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-java:mergeReleaseNativeLibs NO-SOURCE
+> Task :dkplayer-java:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :dkplayer-sample:preBuild UP-TO-DATE
+> Task :dkplayer-sample:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-ui:preBuild UP-TO-DATE
+> Task :dkplayer-ui:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-ui:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-ui:mergeReleaseNativeLibs NO-SOURCE
+> Task :dkplayer-ui:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :dkplayer-videocache:preBuild UP-TO-DATE
+> Task :dkplayer-videocache:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-videocache:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-videocache:mergeReleaseNativeLibs NO-SOURCE
+> Task :dkplayer-videocache:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :dkplayer-players:exo:preBuild UP-TO-DATE
+> Task :dkplayer-players:exo:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-players:exo:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-players:exo:mergeReleaseNativeLibs NO-SOURCE
+> Task :dkplayer-players:exo:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :dkplayer-players:ijk:preBuild UP-TO-DATE
+> Task :dkplayer-players:ijk:preReleaseBuild UP-TO-DATE
+> Task :dkplayer-players:ijk:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :dkplayer-players:ijk:mergeReleaseNativeLibs UP-TO-DATE
+> Task :dkplayer-players:ijk:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseNativeLibs UP-TO-DATE
+> Task :dkplayer-sample:stripReleaseDebugSymbols UP-TO-DATE
+> Task :dkplayer-sample:extractReleaseNativeSymbolTables UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :dkplayer-java:generateReleaseBuildConfig UP-TO-DATE
+> Task :dkplayer-java:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-java:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-java:packageReleaseResources UP-TO-DATE
+> Task :dkplayer-java:parseReleaseLocalResources UP-TO-DATE
+> Task :dkplayer-java:generateReleaseRFile UP-TO-DATE
+> Task :dkplayer-java:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-java:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-java:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :dkplayer-ui:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-ui:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-ui:packageReleaseResources UP-TO-DATE
+> Task :dkplayer-ui:parseReleaseLocalResources UP-TO-DATE
+> Task :dkplayer-ui:generateReleaseRFile UP-TO-DATE
+> Task :dkplayer-ui:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-ui:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-ui:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-ui:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :dkplayer-players:exo:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-players:exo:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-players:exo:packageReleaseResources UP-TO-DATE
+> Task :dkplayer-players:exo:parseReleaseLocalResources UP-TO-DATE
+> Task :dkplayer-players:exo:generateReleaseRFile UP-TO-DATE
+> Task :dkplayer-players:exo:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-players:exo:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-players:exo:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-players:exo:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :dkplayer-java:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-java:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :dkplayer-players:ijk:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-players:ijk:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-players:ijk:packageReleaseResources UP-TO-DATE
+> Task :dkplayer-players:ijk:parseReleaseLocalResources UP-TO-DATE
+> Task :dkplayer-players:ijk:generateReleaseRFile UP-TO-DATE
+> Task :dkplayer-players:ijk:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-players:ijk:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-players:ijk:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-players:ijk:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :dkplayer-videocache:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-videocache:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-videocache:packageReleaseResources UP-TO-DATE
+> Task :dkplayer-videocache:parseReleaseLocalResources UP-TO-DATE
+> Task :dkplayer-videocache:generateReleaseRFile UP-TO-DATE
+> Task :dkplayer-videocache:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-videocache:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-videocache:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-videocache:exportReleaseConsumerProguardFiles UP-TO-DATE
+> Task :dkplayer-java:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :dkplayer-sample:buildKotlinToolingMetadata UP-TO-DATE
+> Task :dkplayer-sample:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :dkplayer-sample:checkKotlinGradlePluginConfigurationErrors
+> Task :dkplayer-sample:generateReleaseBuildConfig UP-TO-DATE
+> Task :dkplayer-java:writeReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-ui:writeReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-videocache:writeReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-players:exo:writeReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-players:ijk:writeReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-sample:checkReleaseAarMetadata UP-TO-DATE
+> Task :dkplayer-sample:generateReleaseResValues UP-TO-DATE
+> Task :dkplayer-sample:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :dkplayer-sample:generateReleaseResources UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseResources UP-TO-DATE
+> Task :dkplayer-sample:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :dkplayer-java:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-java:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-sample:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-ui:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-ui:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-videocache:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-videocache:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-players:exo:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-players:exo:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-players:ijk:extractDeepLinksRelease UP-TO-DATE
+> Task :dkplayer-players:ijk:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-sample:processReleaseMainManifest UP-TO-DATE
+> Task :dkplayer-sample:processReleaseManifest UP-TO-DATE
+> Task :dkplayer-sample:processReleaseManifestForPackage UP-TO-DATE
+> Task :dkplayer-sample:processReleaseResources UP-TO-DATE
+> Task :dkplayer-ui:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :dkplayer-videocache:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :dkplayer-players:exo:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :dkplayer-players:ijk:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :dkplayer-sample:compileReleaseKotlin UP-TO-DATE
+> Task :dkplayer-sample:javaPreCompileRelease UP-TO-DATE
+> Task :dkplayer-sample:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :dkplayer-java:prepareReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-ui:prepareReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-videocache:prepareReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-players:exo:prepareReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-players:ijk:prepareReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseArtProfile UP-TO-DATE
+> Task :dkplayer-ui:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :dkplayer-videocache:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :dkplayer-players:exo:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :dkplayer-players:ijk:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :dkplayer-sample:expandReleaseArtProfileWildcards UP-TO-DATE
+> Task :dkplayer-sample:extractProguardFiles UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :dkplayer-java:processReleaseJavaRes NO-SOURCE
+> Task :dkplayer-sample:processReleaseJavaRes UP-TO-DATE
+> Task :dkplayer-ui:processReleaseJavaRes NO-SOURCE
+> Task :dkplayer-videocache:processReleaseJavaRes NO-SOURCE
+> Task :dkplayer-players:exo:processReleaseJavaRes NO-SOURCE
+> Task :dkplayer-players:ijk:processReleaseJavaRes NO-SOURCE
+> Task :dkplayer-sample:mergeReleaseJavaResource UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseStartupProfile UP-TO-DATE
+> Task :dkplayer-java:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-java:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-java:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-java:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-sample:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-sample:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-ui:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-ui:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-ui:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-ui:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-videocache:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-videocache:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-videocache:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-videocache:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-players:exo:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-players:exo:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-players:exo:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-players:exo:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-players:ijk:mergeReleaseShaders UP-TO-DATE
+> Task :dkplayer-players:ijk:compileReleaseShaders NO-SOURCE
+> Task :dkplayer-players:ijk:generateReleaseAssets UP-TO-DATE
+> Task :dkplayer-players:ijk:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-sample:mergeReleaseAssets UP-TO-DATE
+> Task :dkplayer-sample:compressReleaseAssets UP-TO-DATE
+> Task :dkplayer-sample:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :dkplayer-sample:collectReleaseDependencies UP-TO-DATE
+> Task :dkplayer-sample:sdkReleaseDependencyData UP-TO-DATE
+> Task :dkplayer-sample:validateSigningRelease UP-TO-DATE
+> Task :dkplayer-sample:writeReleaseAppMetadata UP-TO-DATE
+> Task :dkplayer-sample:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :dkplayer-sample:minifyReleaseWithR8
+> Task :dkplayer-sample:compileReleaseArtProfile
+> Task :dkplayer-sample:convertShrunkResourcesToBinaryRelease
+> Task :dkplayer-sample:optimizeReleaseResources
+> Task :dkplayer-sample:packageRelease
+> Task :dkplayer-sample:createReleaseApkListingFileRedirect
+> Task :dkplayer-sample:assembleRelease
+
+BUILD SUCCESSFUL in 5m 12s
+141 actionable tasks: 7 executed, 134 up-to-date
+62
+  log file: /home/z/.gradle/daemon/8.11.1/daemon-11662.out.log
+----- Last 20 lines from daemon log file - daemon-11662.out.log -----
+2026-09-29T10:56:12.448+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] resetting idle timer
+2026-09-29T10:56:12.452+0800 [INFO] [org.gradle.launcher.daemon.server.exec.StartBuildOrRespondWithBusy] Daemon is about to start building Build{id=ab219787-7fdb-4ceb-a6f5-ef78226a255c, currentDir=/home/z/my-project/DKVideoPlayer}. Dispatching build started information...
+2026-09-29T10:56:12.453+0800 [DEBUG] [org.gradle.launcher.daemon.server.SynchronizedDispatchConnection] thread 21: dispatching org.gradle.launcher.daemon.protocol.BuildStarted@12113040
+2026-09-29T10:56:12.453+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon is running. Sleeping until state changes.
+2026-09-29T10:56:12.454+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.EstablishBuildEnvironment] Configuring env variables: [PATH, KUBERNETES_PORT, TZ, ENVD_DIR, BUN_INSTALL_BIN, CLICOLOR_FORCE, JAVA_HOME, TERM, GODEBUG, KUBERNETES_SERVICE_HOST, ANDROID_HOME, UV_CACHE_DIR, BUN_RUNTIME_TRANSPILER_CACHE_PATH, DATABASE_URL, MAIL, CLAWHUB_WORKDIR, aliyun_log_crd_user_defined_id, LOGNAME, NO_COLOR, PWD, GATEWAY_TOKEN, CLAWHUB_DISABLE_TELEMETRY, KUBERNETES_PORT_443_TCP, KUBERNETES_PORT_443_TCP_ADDR, SHELL, UV_PYTHON, KUBERNETES_PORT_443_TCP_PROTO, OLDPWD, BUN_INSTALL, USER, CLICOLOR, KUBERNETES_SERVICE_PORT, PYTHONDONTWRITEBYTECODE, PYTHONUNBUFFERED, DEBIAN_FRONTEND, HOSTNAME, POD_NAME, ECI_CONTAINER_TYPE, KUBERNETES_PORT_443_TCP_PORT, POD_UID, LC_CTYPE, KUBERNETES_SERVICE_PORT_HTTPS, SHLVL, HOME]
+2026-09-29T10:56:12.474+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.LogToClient] About to start relaying all logs to the client via the connection.
+2026-09-29T10:56:12.474+0800 [INFO] [org.gradle.launcher.daemon.server.exec.LogToClient] The client will now receive all logging from the daemon (pid: 11662). The daemon log file: /home/z/.gradle/daemon/8.11.1/daemon-11662.out.log
+2026-09-29T10:56:12.477+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.RequestStopIfSingleUsedDaemon] Requesting daemon stop after processing Build{id=ab219787-7fdb-4ceb-a6f5-ef78226a255c, currentDir=/home/z/my-project/DKVideoPlayer}
+2026-09-29T10:56:12.478+0800 [LIFECYCLE] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Daemon will be stopped at the end of the build 
+2026-09-29T10:56:12.478+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] Stop as soon as idle requested. The daemon is busy
+2026-09-29T10:56:12.479+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] The daemon has started executing the build.
+2026-09-29T10:56:12.479+0800 [DEBUG] [org.gradle.launcher.daemon.server.exec.ExecuteBuild] Executing build with daemon context: DefaultDaemonContext[uid=d120e918-3c97-44a1-8314-e21d71c935f0,javaHome=/home/z/my-project/android_build/jdk17,javaVersion=17,javaVendor=Eclipse Adoptium,daemonRegistryDir=/home/z/.gradle/daemon,pid=11662,idleTimeout=120000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx2048M,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]
+2026-09-29T10:56:12.484+0800 [DEBUG] [org.gradle.launcher.daemon.server.DaemonStateCoordinator] daemon stop has been requested. Sleeping until state changes.
+WARNING: The specified Android SDK Build Tools version (34.0.0) is ignored, as it is below the minimum supported version (35.0.0) for Android Gradle Plugin 8.9.1.
+Android SDK Build Tools 35.0.0 will be used.
+To suppress this warning, remove "buildToolsVersion '34.0.0'" from your build.gradle file, as each version of the Android Gradle Plugin now has a default version of the build tools.
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.----- End of the daemon log -----
+
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Gradle build daemon disappeared unexpectedly (it may have been killed or may have crashed)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.

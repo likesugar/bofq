@@ -1,0 +1,23 @@
+name: Build APK
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build
+        run: |
+          chmod +x gradlew
+          ./gradlew :dkplayer-sample:assembleRelease --no-daemon --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dkplayer-apk
+          path: dkplayer-sample/build/outputs/apk/release/*.apk
