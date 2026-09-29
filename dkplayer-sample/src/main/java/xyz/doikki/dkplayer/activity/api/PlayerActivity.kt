@@ -132,8 +132,11 @@ class PlayerActivity : BaseActivity<VideoView>() {
         val ins = c.inputStream
         val os = java.io.FileOutputStream(out)
         val buf = ByteArray(64 * 1024)
-        var n: Int
-        while (capturing && ins.read(buf).also { n = it } > 0) os.write(buf, 0, n)
+        while (capturing) {
+            val n = ins.read(buf)
+            if (n <= 0) break
+            os.write(buf, 0, n)
+        }
         os.close(); ins.close(); c.disconnect()
     }
 
@@ -177,8 +180,11 @@ class PlayerActivity : BaseActivity<VideoView>() {
                 c.connectTimeout = 8000; c.readTimeout = 15000
                 hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
                 val ins = c.inputStream
-                var n: Int
-                while (capturing && ins.read(buf).also { n = it } > 0) os.write(buf, 0, n)
+                while (capturing) {
+                    val n = ins.read(buf)
+                    if (n <= 0) break
+                    os.write(buf, 0, n)
+                }
                 ins.close(); c.disconnect()
                 if (!capturing) break
             }
