@@ -619,23 +619,35 @@ public class MainActivity extends Activity {
 
     private void injectUserscript(final WebView view) {
         if (userscriptCache != null) { runUserscript(view); return; }
-        if (userscriptTried) return;
-        userscriptTried = true;
-        new Thread(new Runnable() { public void run() {
-            try {
-                HttpURLConnection c = (HttpURLConnection) new java.net.URL(USERSCRIPT_URL).openConnection();
-                c.setConnectTimeout(8000); c.setReadTimeout(8000);
-                c.setRequestProperty("User-Agent", UA_MOBILE);
-                if (c.getResponseCode() != 200) { c.disconnect(); return; }
-                java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(c.getInputStream(), "UTF-8"));
-                StringBuilder sb = new StringBuilder();
-                char[] b = new char[4096]; int n;
-                while ((n = br.read(b)) > 0) sb.append(b, 0, n);
-                br.close(); c.disconnect();
-                userscriptCache = sb.toString();
-                main.post(new Runnable() { public void run() { runUserscript(view); } });
-            } catch (Throwable ignored) {}
-        }}).start();
+        // 离线内置：assets/douyin.user.js（greasyfork 584735 完整脚本）
+        try {
+            java.io.InputStream is = getAssets().open("douyin.user.js");
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] b = new byte[8192]; int n;
+            while ((n = is.read(b)) > 0) bo.write(b, 0, n);
+            is.close();
+            userscriptCache = bo.toString("UTF-8");
+            runUserscript(view);
+        } catch (Throwable ignored) {
+            // assets 失败则走在线下载兜底
+            if (userscriptTried) return;
+            userscriptTried = true;
+            new Thread(new Runnable() { public void run() {
+                try {
+                    HttpURLConnection c = (HttpURLConnection) new java.net.URL(USERSCRIPT_URL).openConnection();
+                    c.setConnectTimeout(8000); c.setReadTimeout(8000);
+                    c.setRequestProperty("User-Agent", UA_MOBILE);
+                    if (c.getResponseCode() != 200) { c.disconnect(); return; }
+                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(c.getInputStream(), "UTF-8"));
+                    StringBuilder sb = new StringBuilder();
+                    char[] b2 = new char[4096]; int n2;
+                    while ((n2 = br.read(b2)) > 0) sb.append(b2, 0, n2);
+                    br.close(); c.disconnect();
+                    userscriptCache = sb.toString();
+                    main.post(new Runnable() { public void run() { runUserscript(view); } });
+                } catch (Throwable ignored2) {}
+            }}).start();
+        }
     }
 
     private void runUserscript(final WebView view) {
