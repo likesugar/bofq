@@ -164,7 +164,7 @@ public class RecyclerViewFragment extends BaseFragment implements OnItemChildCli
     protected void resume() {
         if (mLastPos == -1)
             return;
-        if (MainActivity.mCurrentIndex != 1)
+        if (false) // 主界面已重构，无tab索引
             return;
         //恢复上次播放的位置
         startPlay(mLastPos);
