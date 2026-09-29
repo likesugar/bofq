@@ -21,9 +21,15 @@ public class ProxyVideoCacheManager {
     private static HttpProxyCacheServer newProxy(Context context) {
         return new HttpProxyCacheServer.Builder(context)
                 .maxCacheSize(512 * 1024 * 1024)       // 512MB for cache
-                //缓存路径，不设置默认在sd_card/Android/data/[app_package_name]/cache中
-//                .cacheDirectory()
+                //缓存固定到 downloads 目录（下载页从这里取）
+                .cacheDirectory(new File(context.getExternalFilesDir(null), "downloads"))
                 .build();
+    }
+
+    /** 下载页读取的缓存目录 */
+    public static File getCacheDir(Context context) {
+        getProxy(context);
+        return sharedProxy.getCacheRoot();
     }
 
 

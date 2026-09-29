@@ -53,6 +53,8 @@ public class MxPanelView extends GestureView {
     private TextView tvInfo;
     private LinearLayout rowSub;
     private LinearLayout mPanel;
+    /** 边播边缓存按钮回调，由播放页注入 */
+    public Runnable onCacheClick;
     private int scaleIdx = 0, speedIdx = 2;
     private boolean mirrored = false, muted = false, landscape = false;
     private int expanded = -1;
@@ -86,13 +88,14 @@ public class MxPanelView extends GestureView {
         rowMain.setGravity(Gravity.CENTER_VERTICAL);
         mPanel.addView(rowMain);
 
-        String[] mains = {"比例", "倍速", "截图", "静音", "旋转"};
+        String[] mains = {"比例", "倍速", "截图", "静音", "旋转", "缓存"};
         for (int i = 0; i < mains.length; i++) {
             final int idx = i;
             TextView b = circleBtn(mains[i]);
             b.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     if (idx == 2) { doShot(); return; }   // 截图直接执行
+                    if (idx == 5) { if (onCacheClick != null) onCacheClick.run(); return; }   // 缓存交给播放页处理
                     expanded = (expanded == idx) ? -1 : idx;
                     showSub();
                 }

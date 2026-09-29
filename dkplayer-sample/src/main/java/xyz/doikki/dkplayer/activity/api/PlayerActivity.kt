@@ -34,6 +34,32 @@ class PlayerActivity : BaseActivity<VideoView>() {
 
     override fun showTitleBar() = false // 去掉 dk播放器 顶栏
 
+    private var rawUrl: String? = null
+    private var cacheOn = false
+    private lateinit var mxPanel: xyz.doikki.dkplayer.widget.component.MxPanelView
+
+    /** 点「缓存」：当前视频切到本地代理，边播边存进 downloads */
+    private fun cacheAndReplay() {
+        val u = rawUrl
+        if (cacheOn) {
+            Toast.makeText(this, "已在边播边缓存", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val eligible = u != null && u.startsWith("http") && !u.contains("127.0.0.1")
+                && !u.contains(".m3u8") && !u.contains(".flv")
+        if (!eligible) {
+            Toast.makeText(this, "此链接不支持缓存(m3u8/本地代理流)", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val pos = mVideoView!!.currentPosition
+        cacheOn = true
+        mVideoView!!.release()
+        mVideoView!!.skipPositionWhenPlay(pos)
+        mVideoView!!.setUrl(xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getProxy(this).getProxyUrl(u))
+        mVideoView!!.start()
+        Toast.makeText(this, "边播边缓存已开启，文件在下载页", Toast.LENGTH_SHORT).show()
+    }
+
     private val renderView by lazy {
         GLSurfaceRenderView2(this)
     }
@@ -69,7 +95,9 @@ class PlayerActivity : BaseActivity<VideoView>() {
             }
             val gestureControlView = GestureView(this) //滑动控制视图
             controller.addControlComponent(gestureControlView)
-            controller.addControlComponent(xyz.doikki.dkplayer.widget.component.MxPanelView(this)) //MX浮层:比例/倍速/截图/静音/旋转
+            mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
+            mxPanel.onCacheClick = Runnable { cacheAndReplay() }
+            controller.addControlComponent(mxPanel) //MX浮层:比例/倍速/截图/静音/旋转/缓存
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
             //默认进入全屏播放（横屏）
@@ -114,6 +142,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             }
 //            val header = hashMapOf("User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36")
             mVideoView.setUrl(url)
+            rawUrl = url
 
             //保存播放进度
 //            mVideoView.setProgressManager(ProgressManagerImpl())

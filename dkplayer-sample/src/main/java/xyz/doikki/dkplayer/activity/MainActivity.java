@@ -151,10 +151,10 @@ public class MainActivity extends Activity {
 
     /** 功能大全：原 sample 演示功能列表 */
     private void showFeatures() {
-        final String[] names = {"全屏播放", "播放列表", "抖音上下滑", "画中画", "自定义Exo内核",
+        final String[] names = {"下载页", "全屏播放", "播放列表", "抖音上下滑", "画中画", "自定义Exo内核",
                 "自定义IJK内核", "多清晰度", "边播边缓存", "播放广告样例", "Pad适配",
                 "并行播放", "Raw Assets", "CPU信息"};
-        final Class<?>[] cls = {FullScreenActivity.class, PlayListActivity.class, TikTokActivity.class,
+        final Class<?>[] cls = {DownloadsActivity.class, FullScreenActivity.class, PlayListActivity.class, TikTokActivity.class,
                 PIPActivity.class, CustomExoPlayerActivity.class, CustomIjkPlayerActivity.class,
                 DefinitionPlayerActivity.class, CacheActivity.class, ADActivity.class, PadActivity.class,
                 ParallelPlayActivity.class, PlayRawAssetsActivity.class, CpuInfoActivity.class};
