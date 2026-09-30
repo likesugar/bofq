@@ -16,8 +16,8 @@ import xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager;
  */
 public final class CaptureManager {
 
-    @Volatile public static boolean running = false;
-    @Volatile public static boolean paused = false;
+    public static volatile boolean running = false;
+    public static volatile boolean paused = false;
 
     public static String url = null;
     public static Map<String, String> hdrs = null;
