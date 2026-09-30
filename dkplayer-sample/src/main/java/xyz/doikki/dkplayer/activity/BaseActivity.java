@@ -152,10 +152,15 @@ public class BaseActivity<T extends BaseVideoView> extends AppCompatActivity {
     }
 
 
+    /** 是否在退到后台时暂停播放（播放器可关闭以实现后台播声） */
+    protected boolean pauseVideoInBackground() {
+        return true;
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
-        if (mVideoView != null) {
+        if (mVideoView != null && pauseVideoInBackground()) {
             mVideoView.pause();
         }
     }

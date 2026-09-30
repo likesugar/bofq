@@ -57,6 +57,7 @@ public class MxPanelView extends GestureView {
     /** 由播放页注入：缓存实时抓流 / 代理兜底 / 循环（DK 无内置循环，播放页在完成事件里重播） */
     public Runnable onCacheClick;
     public Runnable onProxyClick;
+    public Runnable onBgPlayClick;
     public interface MenuAction { void onLoop(boolean loopOn); }
     public MenuAction menuAction;
     /** 第四版「其他地址→开始播放」，与控制层合并 */
@@ -136,7 +137,20 @@ public class MxPanelView extends GestureView {
         LinearLayout icons = new LinearLayout(getContext());
         icons.setOrientation(LinearLayout.HORIZONTAL);
         icons.addView(menuItem("后台播放", new Runnable() { public void run() {
-            Toast.makeText(getContext(), "后台播放暂未支持", Toast.LENGTH_SHORT).show(); }}));
+            if (onBgPlayClick != null) onBgPlayClick.run();
+        }}));
+        icons.addView(menuItem("横竖切换", new Runnable() { public void run() {
+            android.app.Activity act = null;
+            if (getContext() instanceof android.app.Activity) act = (android.app.Activity) getContext();
+            if (act == null) return;
+            int cur = act.getRequestedOrientation();
+            boolean toPortrait = cur == android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                || cur == android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            act.setRequestedOrientation(toPortrait
+                ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            Toast.makeText(getContext(), toPortrait ? "已切竖屏" : "已切横屏", Toast.LENGTH_SHORT).show();
+        }}));
         icons.addView(menuItem(mirrored ? "镜像已开" : "镜像翻转", new Runnable() { public void run() {
             mirrored = !mirrored;
             mWrapper.setMirrorRotation(mirrored);

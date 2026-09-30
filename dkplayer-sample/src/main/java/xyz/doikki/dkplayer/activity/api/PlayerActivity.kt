@@ -33,12 +33,31 @@ import xyz.doikki.videoplayer.util.L
  */
 class PlayerActivity : BaseActivity<VideoView>() {
 
+    private val pickVideo = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        try {
+            contentResolver.takePersistableUriPermission(uri,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: Exception) {
+        }
+        rawUrl = uri.toString()
+        cacheOn = false
+        proxyOn = false
+        mVideoView!!.release()
+        mVideoView!!.setUrl(uri.toString())
+        mVideoView!!.start()
+        Toast.makeText(this, "本地文件播放中", Toast.LENGTH_SHORT).show()
+    }
+
     override fun showTitleBar() = false // 去掉 dk播放器 顶栏
 
     private var rawUrl: String? = null
     private var cacheOn = false
     private var proxyOn = false
     private var loopOn = false
+    private var bgPlayOn = false
+
+    override fun pauseVideoInBackground() = !bgPlayOn
     private lateinit var mxPanel: xyz.doikki.dkplayer.widget.component.MxPanelView
 
     /** 防盗链请求头：B站/抖音直连播放用 */
@@ -292,6 +311,10 @@ class PlayerActivity : BaseActivity<VideoView>() {
             mxPanel = xyz.doikki.dkplayer.widget.component.MxPanelView(this)
             mxPanel.onCacheClick = Runnable { toggleCapture() }
             mxPanel.onProxyClick = Runnable { replayWithProxy() }
+            mxPanel.onBgPlayClick = Runnable {
+                bgPlayOn = !bgPlayOn
+                Toast.makeText(this, if (bgPlayOn) "后台播放已开启(退后台继续播声音)" else "后台播放已关闭", Toast.LENGTH_SHORT).show()
+            }
             mxPanel.menuAction = object : xyz.doikki.dkplayer.widget.component.MxPanelView.MenuAction {
                 override fun onLoop(loop: Boolean) { loopOn = loop }
             }
@@ -343,11 +366,12 @@ class PlayerActivity : BaseActivity<VideoView>() {
             // 无链接进入：隐藏准备界面(转圈)，等「其他地址」开播
             if (url == null) prepareView.visibility = View.GONE
 
-            //方向按源：抖音竖屏、哔哩哔哩等横屏
-            requestedOrientation = if (url != null && (url!!.contains("douyin") || url!!.contains("aweme")))
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            else
-                android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            //方向按源：无链接进竖屏，抖音竖屏，哔哩哔哩等横屏
+            requestedOrientation = when {
+                url == null -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                url.contains("douyin") || url.contains("aweme") -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                else -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            }
 
             //保存播放进度
 //            mVideoView.setProgressManager(ProgressManagerImpl())
@@ -386,8 +410,9 @@ class PlayerActivity : BaseActivity<VideoView>() {
             if (url != null) mVideoView.start()
         }
 
-        // 第四版按键：其他地址 + 开始播放（播放器下方，与控制层并存）
+        // 第四版按键：其他地址 + 本地文件 + 开始播放（播放器下方，与控制层并存）
         val etOther = findViewById<EditText>(R.id.et_other_video)
+        findViewById<View>(R.id.btn_local).setOnClickListener { pickVideo.launch("video/*") }
         findViewById<View>(R.id.btn_start_play).setOnClickListener {
             val u = etOther.text.toString().trim()
             if (u.isEmpty()) return@setOnClickListener
