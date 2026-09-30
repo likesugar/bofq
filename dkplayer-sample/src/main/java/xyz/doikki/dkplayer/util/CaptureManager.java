@@ -82,7 +82,7 @@ public final class CaptureManager {
     /** 单文件流：直接边播边写盘 */
     private static void captureDirect(String u, Map<String, String> h, File out) throws Exception {
         java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection();
-        c.connectTimeout = 8000; c.readTimeout = 15000;
+        c.setConnectTimeout(8000); c.setReadTimeout(15000);
         if (h != null) for (Map.Entry<String, String> en : h.entrySet()) c.setRequestProperty(en.getKey(), en.getValue());
         java.io.InputStream ins = c.getInputStream();
         java.io.FileOutputStream os = new java.io.FileOutputStream(out);
@@ -136,7 +136,7 @@ public final class CaptureManager {
                 done.add(seg);
                 gotNew = true;
                 java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(seg).openConnection();
-                c.connectTimeout = 8000; c.readTimeout = 15000;
+                c.setConnectTimeout(8000); c.setReadTimeout(15000);
                 if (h != null) for (Map.Entry<String, String> en : h.entrySet()) c.setRequestProperty(en.getKey(), en.getValue());
                 java.io.InputStream ins = c.getInputStream();
                 while (running) {
@@ -160,7 +160,7 @@ public final class CaptureManager {
     private static String httpGet(String u, Map<String, String> h) {
         try {
             java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection();
-            c.connectTimeout = 8000; c.readTimeout = 8000;
+            c.setConnectTimeout(8000); c.setReadTimeout(8000);
             if (h != null) for (Map.Entry<String, String> en : h.entrySet()) c.setRequestProperty(en.getKey(), en.getValue());
             if (c.getResponseCode() != 200) { c.disconnect(); return null; }
             java.io.InputStream ins = c.getInputStream();

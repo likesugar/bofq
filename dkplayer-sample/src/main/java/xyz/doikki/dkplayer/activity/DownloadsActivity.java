@@ -24,6 +24,7 @@ import xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager;
 public class DownloadsActivity extends BaseActivity {
 
     private LinearLayout list;
+    private TextView tvCap;
 
     @Override
     protected int getTitleResId() {
@@ -66,7 +67,12 @@ public class DownloadsActivity extends BaseActivity {
         root.addView(btnClear);
 
         // ---- 抓流控制：状态行 + 暂停/继续/停止 ----
-        final TextView tvCap = new TextView(this);
+        if (tvCap == null) {
+            tvCap = new TextView(this);
+            tvCap.setTextColor(0xFF333333);
+            tvCap.setTextSize(13);
+            tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
+        }
         tvCap.setTextColor(0xFF333333);
         tvCap.setTextSize(13);
         tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
