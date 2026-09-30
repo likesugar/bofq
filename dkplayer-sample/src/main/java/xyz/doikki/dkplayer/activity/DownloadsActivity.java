@@ -67,13 +67,11 @@ public class DownloadsActivity extends BaseActivity {
         root.addView(btnClear);
 
         // ---- 抓流控制：状态行 + 暂停/继续/停止 ----
-        if (tvCap == null) {
-            tvCap = new TextView(this);
-            tvCap.setTextColor(0xFF333333);
-            tvCap.setTextSize(13);
-            tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
-        }
+        // 每次 getContentView 都新建，避免 Activity 重建时同一 View 重复 addView 崩溃
+        tvCap = new TextView(this);
         tvCap.setTextColor(0xFF333333);
+        tvCap.setTextSize(13);
+        tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
         tvCap.setTextSize(13);
         tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
 
