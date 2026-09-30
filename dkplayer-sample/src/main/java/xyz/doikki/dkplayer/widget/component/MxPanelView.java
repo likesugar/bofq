@@ -341,6 +341,8 @@ public class MxPanelView extends GestureView implements android.view.GestureDete
     @Override
     public void onLongPress(android.view.MotionEvent e) { }
     @Override
+    public boolean onFling(android.view.MotionEvent e1, android.view.MotionEvent e2, float vx, float vy) { return true; }
+    @Override
     public boolean onSingleTapConfirmed(android.view.MotionEvent e) {
         if (mWrapper != null) mWrapper.toggleShowState();
         return true;
