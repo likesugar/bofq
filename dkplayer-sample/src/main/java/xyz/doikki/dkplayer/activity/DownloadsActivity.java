@@ -65,6 +65,43 @@ public class DownloadsActivity extends BaseActivity {
         });
         root.addView(btnClear);
 
+        // ---- 抓流控制：状态行 + 暂停/继续/停止 ----
+        final TextView tvCap = new TextView(this);
+        tvCap.setTextColor(0xFF333333);
+        tvCap.setTextSize(13);
+        tvCap.setPadding(dp(14), dp(6), dp(12), dp(2));
+
+        LinearLayout capRow = new LinearLayout(this);
+        capRow.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams brp = new LinearLayout.LayoutParams(0, dp(36), 1);
+        brp.setMargins(dp(4), dp(4), dp(4), dp(4));
+        android.widget.Button btnPause = new android.widget.Button(this);
+        android.widget.Button btnResume = new android.widget.Button(this);
+        android.widget.Button btnStop = new android.widget.Button(this);
+        btnPause.setText("暂停"); btnResume.setText("继续"); btnStop.setText("停止");
+        btnPause.setTextSize(13); btnResume.setTextSize(13); btnStop.setTextSize(13);
+        btnPause.setLayoutParams(new LinearLayout.LayoutParams(brp));
+        btnResume.setLayoutParams(new LinearLayout.LayoutParams(brp));
+        btnStop.setLayoutParams(new LinearLayout.LayoutParams(brp));
+        btnPause.setOnClickListener(v -> {
+            xyz.doikki.dkplayer.util.CaptureManager.pause();
+            Toast.makeText(this, "已暂停抓取", Toast.LENGTH_SHORT).show();
+            refresh();
+        });
+        btnResume.setOnClickListener(v -> {
+            xyz.doikki.dkplayer.util.CaptureManager.resume();
+            Toast.makeText(this, "继续抓取", Toast.LENGTH_SHORT).show();
+            refresh();
+        });
+        btnStop.setOnClickListener(v -> {
+            xyz.doikki.dkplayer.util.CaptureManager.stop();
+            Toast.makeText(this, "已停止抓取", Toast.LENGTH_SHORT).show();
+            refresh();
+        });
+        capRow.addView(btnPause); capRow.addView(btnResume); capRow.addView(btnStop);
+        root.addView(tvCap);
+        root.addView(capRow);
+
         TextView tvTip = new TextView(this);
         tvTip.setText("文件目录: Android/data/xyz.doikki.dkplayer/files/downloads");
         tvTip.setTextColor(0xFF888888);
@@ -85,6 +122,23 @@ public class DownloadsActivity extends BaseActivity {
     protected void onResume() {
         super.onResume();
         refresh();
+        uiHandler.removeCallbacks(statusTick);
+        statusTick.run();
+    }
+
+    private final android.os.Handler uiHandler = new android.os.Handler();
+
+    private final Runnable statusTick = new Runnable() {
+        public void run() {
+            tvCap.setText("抓流: " + xyz.doikki.dkplayer.util.CaptureManager.statusText());
+            uiHandler.postDelayed(this, 1000);
+        }
+    };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        uiHandler.removeCallbacks(statusTick);
     }
 
     private void refresh() {

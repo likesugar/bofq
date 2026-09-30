@@ -274,14 +274,8 @@ public class MxPanelView extends GestureView implements android.view.GestureDete
         LayoutParams blp = new LayoutParams(LayoutParams.MATCH_PARENT, dp(3), Gravity.BOTTOM);
         addView(bottomBar, blp);
 
-        // 自带手势：单击呼出/隐藏控制层，双击播放暂停（竖屏普通态也生效）
-        mDetector = new android.view.GestureDetector(getContext(), this);
-        setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, android.view.MotionEvent event) {
-                mDetector.onTouchEvent(event);
-                return true;
-            }
-        });
+        // 手势交还控制器：单击呼出/隐藏控制层、双击暂停由 GestureVideoController 处理，
+        // 本视图不再全屏接管触摸（否则标题栏/底部控制条永远点不到）
     }
 
     private View sep() {

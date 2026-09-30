@@ -92,13 +92,10 @@ class PlayerActivity : BaseActivity<VideoView>() {
         }
     }
 
-    /** 点「缓存」：实时抓取播放器当前流写成文件（再点一次停止），文件进下载页 */
-    private var capturing = false
-    private var captureThread: Thread? = null
-
+    /** 点「缓存」：实时抓取当前流写成文件（再点一次停止），由全局 CaptureManager 执行 */
     private fun toggleCapture() {
-        if (capturing) {
-            capturing = false
+        if (xyz.doikki.dkplayer.util.CaptureManager.running) {
+            xyz.doikki.dkplayer.util.CaptureManager.stop()
             Toast.makeText(this, "已停止抓取", Toast.LENGTH_SHORT).show()
             return
         }
@@ -112,109 +109,11 @@ class PlayerActivity : BaseActivity<VideoView>() {
             u.contains(".flv") -> "flv"
             else -> "mp4"
         }
-        val dir = xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getCacheDir(this) // 与下载页同目录
-        val outFile = java.io.File(dir, "download_" + System.currentTimeMillis() + "." + ext)
-        capturing = true
+        xyz.doikki.dkplayer.util.CaptureManager.start(applicationContext, u, headersFor(u), ext)
         cacheOn = true
-        val hdrs = headersFor(u)
-        captureThread = Thread {
-            try {
-                if (ext == "ts") captureM3u8(u, hdrs, outFile) else captureDirect(u, hdrs, outFile)
-            } catch (ignored: Throwable) {
-            }
-        }
-        captureThread!!.start()
-        Toast.makeText(this, "开始实时抓取: download_*.$ext（再点停止）", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "开始实时抓取: download_*.$ext（下载页可暂停/停止）", Toast.LENGTH_LONG).show()
     }
 
-    /** 单文件流：直接边播边写盘 */
-    private fun captureDirect(u: String, hdrs: Map<String, String>?, out: java.io.File) {
-        val c = java.net.URL(u).openConnection() as java.net.HttpURLConnection
-        c.connectTimeout = 8000; c.readTimeout = 15000
-        hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
-        val ins = c.inputStream
-        val os = java.io.FileOutputStream(out)
-        val buf = ByteArray(64 * 1024)
-        while (capturing) {
-            val n = ins.read(buf)
-            if (n <= 0) break
-            os.write(buf, 0, n)
-        }
-        os.close(); ins.close(); c.disconnect()
-    }
-
-    /** m3u8：逐片下载拼接成 ts；直播清单会循环刷新拿新分片 */
-    private fun captureM3u8(masterUrl: String, hdrs: Map<String, String>?, out: java.io.File) {
-        val os = java.io.FileOutputStream(out)
-        val buf = ByteArray(64 * 1024)
-        val done = HashSet<String>()
-        var mediaUrl: String? = null
-        var rounds = 0
-        while (capturing) {
-            val listUrl = mediaUrl ?: masterUrl
-            val body = httpGet(listUrl, hdrs) ?: break
-            if (mediaUrl == null && !body.contains("#EXTINF")) {
-                // 主清单：选 BANDWIDTH 最大的变体
-                var bestBw = -1L; var best: String? = null; var cur = -1L
-                val base = java.net.URI.create(masterUrl)
-                for (ln in body.split("\n")) {
-                    val t = ln.trim()
-                    if (t.startsWith("#EXT-X-STREAM-INF")) {
-                        val m = Regex("BANDWIDTH=(\\d+)").find(t)
-                        cur = m?.groupValues?.get(1)?.toLong() ?: -1
-                    } else if (t.isNotEmpty() && !t.startsWith("#") && cur > bestBw) {
-                        bestBw = cur; best = base.resolve(t).toString()
-                    }
-                }
-                mediaUrl = best ?: break
-                continue
-            }
-            // 媒体清单：顺序抓没下过的分片
-            val base = java.net.URI.create(listUrl)
-            var gotNew = false
-            for (ln in body.split("\n")) {
-                val t = ln.trim()
-                if (t.isEmpty() || t.startsWith("#")) continue
-                val seg = base.resolve(t).toString()
-                if (done.contains(seg)) continue
-                done.add(seg)
-                gotNew = true
-                val c = java.net.URL(seg).openConnection() as java.net.HttpURLConnection
-                c.connectTimeout = 8000; c.readTimeout = 15000
-                hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
-                val ins = c.inputStream
-                while (capturing) {
-                    val n = ins.read(buf)
-                    if (n <= 0) break
-                    os.write(buf, 0, n)
-                }
-                ins.close(); c.disconnect()
-                if (!capturing) break
-            }
-            val isLive = body.contains("#EXT-X-MEDIA-SEQUENCE") && !body.contains("#EXT-X-ENDLIST")
-            if (!isLive && gotNew) break           // 点播抓完即止
-            if (!isLive && !gotNew) break
-            if (rounds++ > 7200) break             // 直播最多约2小时
-            Thread.sleep(2000)
-        }
-        os.close()
-        capturing = false
-    }
-
-    private fun httpGet(u: String, hdrs: Map<String, String>?): String? {
-        return try {
-            val c = java.net.URL(u).openConnection() as java.net.HttpURLConnection
-            c.connectTimeout = 8000; c.readTimeout = 8000
-            hdrs?.forEach { (k, v) -> c.setRequestProperty(k, v) }
-            if (c.responseCode != 200) { c.disconnect(); return null }
-            val ins = c.inputStream
-            val bo = java.io.ByteArrayOutputStream()
-            val b = ByteArray(8192); var n: Int
-            while (ins.read(b).also { n = it } > 0) bo.write(b, 0, n)
-            ins.close(); c.disconnect()
-            bo.toString("UTF-8")
-        } catch (e: Throwable) { null }
-    }
 
     override fun onDestroy() {
         // 抓流不中断：离开播放器后台继续写入，直到再次点「缓存」停止
