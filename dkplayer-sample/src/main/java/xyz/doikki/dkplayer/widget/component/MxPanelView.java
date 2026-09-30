@@ -15,6 +15,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,7 +33,7 @@ import xyz.doikki.videoplayer.player.VideoView;
  * B站风格播放器浮层：右上角 ⁝ 按钮，点开右侧半透明功能面板
  * （图标排/播放方式/画面尺寸/播放速度/工具），信息行显示 video width/height
  */
-public class MxPanelView extends GestureView {
+public class MxPanelView extends GestureView implements android.view.GestureDetector.OnGestureListener, android.view.GestureDetector.OnDoubleTapListener {
 
     private static final int[] SCALES = {
             VideoView.SCREEN_SCALE_DEFAULT,
@@ -47,6 +48,8 @@ public class MxPanelView extends GestureView {
             {"0.5X", "0.75X", "1X", "1.25X", "1.5X", "2X"};
 
     private ControlWrapper mWrapper;
+    private android.view.GestureDetector mDetector;
+    private ProgressBar bottomBar;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private TextView tvInfo;
     private LinearLayout mMenu;
@@ -263,6 +266,22 @@ public class MxPanelView extends GestureView {
             }
         };
         mHandler.postDelayed(tick, 500);
+
+        // 常驻底部细进度条（控制层隐藏时也显示）
+        bottomBar = new ProgressBar(getContext(), null, android.R.attr.progressBarStyleHorizontal);
+        bottomBar.setMax(1000);
+        bottomBar.getProgressDrawable().setColorFilter(0x99FFFFFF, android.graphics.PorterDuff.Mode.SRC_IN);
+        LayoutParams blp = new LayoutParams(LayoutParams.MATCH_PARENT, dp(3), Gravity.BOTTOM);
+        addView(bottomBar, blp);
+
+        // 自带手势：单击呼出/隐藏控制层，双击播放暂停（竖屏普通态也生效）
+        mDetector = new android.view.GestureDetector(getContext(), this);
+        setOnTouchListener(new View.OnTouchListener() {
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                mDetector.onTouchEvent(event);
+                return true;
+            }
+        });
     }
 
     private View sep() {
@@ -309,6 +328,38 @@ public class MxPanelView extends GestureView {
 
     private int dp(int v) {
         return (int) (v * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    @Override
+    public boolean onDown(android.view.MotionEvent e) { return true; }
+    @Override
+    public void onShowPress(android.view.MotionEvent e) { }
+    @Override
+    public boolean onSingleTapUp(android.view.MotionEvent e) { return true; }
+    @Override
+    public boolean onScroll(android.view.MotionEvent e1, android.view.MotionEvent e2, float dx, float dy) { return true; }
+    @Override
+    public void onLongPress(android.view.MotionEvent e) { }
+    @Override
+    public boolean onSingleTapConfirmed(android.view.MotionEvent e) {
+        if (mWrapper != null) mWrapper.toggleShowState();
+        return true;
+    }
+    @Override
+    public boolean onDoubleTap(android.view.MotionEvent e) {
+        if (mWrapper != null) mWrapper.togglePlay();
+        return true;
+    }
+    @Override
+    public boolean onDoubleTapEvent(android.view.MotionEvent e) { return true; }
+
+    @Override
+    public void setProgress(int duration, int position) {
+        if (bottomBar != null && duration > 0) {
+            bottomBar.setMax(duration);
+            bottomBar.setProgress(position);
+            bottomBar.setVisibility(VISIBLE);
+        }
     }
 
     @Override
