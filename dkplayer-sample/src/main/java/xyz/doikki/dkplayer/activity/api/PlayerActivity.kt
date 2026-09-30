@@ -112,7 +112,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             u.contains(".flv") -> "flv"
             else -> "mp4"
         }
-        val dir = getExternalFilesDir(null)
+        val dir = xyz.doikki.dkplayer.util.cache.ProxyVideoCacheManager.getCacheDir(this) // 与下载页同目录
         val outFile = java.io.File(dir, "download_" + System.currentTimeMillis() + "." + ext)
         capturing = true
         cacheOn = true
@@ -217,7 +217,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
     }
 
     override fun onDestroy() {
-        capturing = false
+        // 抓流不中断：离开播放器后台继续写入，直到再次点「缓存」停止
         super.onDestroy()
     }
 
