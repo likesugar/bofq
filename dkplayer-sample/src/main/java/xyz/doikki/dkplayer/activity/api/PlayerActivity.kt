@@ -33,22 +33,6 @@ import xyz.doikki.videoplayer.util.L
  */
 class PlayerActivity : BaseActivity<VideoView>() {
 
-    private val pickVideo = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
-        if (uri == null) return@registerForActivityResult
-        try {
-            contentResolver.takePersistableUriPermission(uri,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        } catch (e: Exception) {
-        }
-        rawUrl = uri.toString()
-        cacheOn = false
-        proxyOn = false
-        mVideoView!!.release()
-        mVideoView!!.setUrl(uri.toString())
-        mVideoView!!.start()
-        Toast.makeText(this, "本地文件播放中", Toast.LENGTH_SHORT).show()
-    }
-
     override fun showTitleBar() = false // 去掉 dk播放器 顶栏
 
     private var rawUrl: String? = null
@@ -237,6 +221,22 @@ class PlayerActivity : BaseActivity<VideoView>() {
         super.onDestroy()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 2001 && resultCode == RESULT_OK && data?.data != null) {
+            val uri = data.data!!
+            try { contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (e: Exception) {}
+            rawUrl = uri.toString()
+            cacheOn = false
+            proxyOn = false
+            mVideoView!!.setPlayerFactory(xyz.doikki.videoplayer.exo.ExoMediaPlayerFactory.create())
+            mVideoView!!.release()
+            mVideoView!!.setUrl(uri.toString())
+            mVideoView!!.start()
+            Toast.makeText(this, "本地文件播放中", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         // singleTask 复用已有播放器：换源重播，不再叠一层
@@ -322,6 +322,7 @@ class PlayerActivity : BaseActivity<VideoView>() {
             //根据是否为直播决定是否需要滑动调节进度
             controller.setCanChangePosition(!isLive)
             controller.setDismissTimeout(8000) //控件显示时长 4s→8s
+            controller.setEnableInNormal(true) //竖屏也可呼出控制层
             //有链接时不自动全屏展开（视频区+下方其他地址栏，方向按源）
 
             //设置标题
@@ -412,7 +413,16 @@ class PlayerActivity : BaseActivity<VideoView>() {
 
         // 第四版按键：其他地址 + 本地文件 + 开始播放（播放器下方，与控制层并存）
         val etOther = findViewById<EditText>(R.id.et_other_video)
-        findViewById<View>(R.id.btn_local).setOnClickListener { pickVideo.launch("video/*") }
+        findViewById<View>(R.id.btn_local).setOnClickListener {
+            try {
+                val i = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT)
+                i.addCategory(android.content.Intent.CATEGORY_OPENABLE)
+                i.type = "video/*"
+                startActivityForResult(i, 2001)
+            } catch (e: Exception) {
+                Toast.makeText(this, "无法打开文件选择器", Toast.LENGTH_SHORT).show()
+            }
+        }
         findViewById<View>(R.id.btn_start_play).setOnClickListener {
             val u = etOther.text.toString().trim()
             if (u.isEmpty()) return@setOnClickListener
